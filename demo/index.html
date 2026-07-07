@@ -144,6 +144,36 @@ await flock.stop();          // the classic bomber exit sequence
 
   <div class="fakeimg two">SECOND IMAGE</div>
 
+  <h2>Pixel-perfect collisions</h2>
+
+  <p>The word below is a transparent <code>&lt;canvas&gt;</code>. The engine
+  reads its alpha channel and builds a collision mask, so penguins stand on
+  the letterforms themselves — not the bounding box — tumble into the gaps
+  between letters, climb the tall stems, and snow settles on the glyph tops.
+  The original xpenguins pulled the same trick with the X11 SHAPE extension
+  for shaped windows.</p>
+
+  <canvas id="wordmark" width="640" height="170"
+          style="display:block;margin:34px auto;max-width:100%"></canvas>
+  <script>
+    (function () {
+      var c = document.getElementById("wordmark");
+      var x = c.getContext("2d");
+      x.font = "bold 104px Arial, Helvetica, sans-serif";
+      x.textBaseline = "alphabetic";
+      var word = "Penguins";
+      var colors = ["#4285F4", "#EA4335", "#FBBC05", "#4285F4", "#34A853", "#EA4335", "#4285F4", "#34A853"];
+      var total = 0;
+      for (var i = 0; i < word.length; i++) total += x.measureText(word[i]).width;
+      var px = (c.width - total) / 2;
+      for (var j = 0; j < word.length; j++) {
+        x.fillStyle = colors[j % colors.length];
+        x.fillText(word[j], px, 120);
+        px += x.measureText(word[j]).width;
+      }
+    })();
+  </script>
+
   <p>Long paragraphs are deliberately boring so that the boxes stand out.
   The engine ignores plain text: penguins won't balance on a comma. They will
   however happily walk on headings, tables, buttons and anything that looks

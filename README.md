@@ -91,6 +91,17 @@ no background worker, no messaging, no page-visible globals.
   still squashes it, exactly like a moving X11 window. Surfaces touching the
   top of the page aren't solid (ditto the original, so toons can always drop
   in), and new arrivals parachute in just above wherever you're looking.
+- **`src/masks.ts` — pixel-shaped collision.** For `<img>` and `<canvas>`
+  elements, the engine reads the alpha channel (offscreen canvas +
+  `getImageData`) and builds a bit-packed collision mask, so penguins stand
+  on the letterforms of a logo — not its bounding box — tumble into the gaps
+  between glyphs, and climb the tall stems. Snow settles on the per-column
+  pixel profile of the shape. This is the web version of the X11 SHAPE
+  extension, which the original xpenguins genuinely supported for shaped
+  windows. Fully-opaque images skip the mask (a plain rect is identical and
+  cheaper), fully-transparent ones stop being solid entirely, and
+  cross-origin images that taint the canvas retry via
+  `crossOrigin="anonymous"` before falling back to the plain rect.
 - **The glass floor** — the viewport's bottom edge is a one-way collider:
   falling penguins land on it, so on endless/infinite-scroll pages nothing
   ever falls out of sight. Gentle scrolling carries the penguins standing on

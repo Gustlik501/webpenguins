@@ -11,7 +11,8 @@
 // Everything lives in *document* coordinates: the page is the desktop and
 // scrolling merely moves the camera. Only real layout changes (rescans that
 // move a rect) count as "windows moving".
-import { SolidRect } from "./types";
+import { MaskRegistry } from "./masks";
+import { PixelMask, SolidRect } from "./types";
 
 const NEVER_SOLID = new Set([
   "SCRIPT",
@@ -54,7 +55,13 @@ interface Surface {
   y: number;
   w: number;
   h: number;
+  mask?: PixelMask;
+  maskDX?: number;
+  maskDY?: number;
 }
+
+// Shaped-collision candidates: their alpha channel is their shape.
+const MASKABLE = new Set(["IMG", "CANVAS"]);
 
 interface Box {
   x: number;
@@ -140,6 +147,8 @@ export class Surfaces {
   // per-scan memoization
   private backdropCache = new Map<Element, string>();
   private gluedCache = new Map<Element, boolean>();
+  // pixel masks (rescan shortly after a cross-origin retry succeeds)
+  private masks = new MaskRegistry(() => this.scheduleRescan(50));
 
   start(): void {
     this.scan();
@@ -344,16 +353,34 @@ export class Surfaces {
       if (!clipped) continue;
       box = clipped;
 
-      // Big rounded corners: stand on the flat part, not the phantom corner.
-      const radius = Math.max(
-        parseFloat(st.borderTopLeftRadius) || 0,
-        parseFloat(st.borderTopRightRadius) || 0
-      );
-      if (radius > 8) {
-        const inset = Math.min(radius, box.w / 4);
-        box = { x: box.x + inset, y: box.y, w: box.w - 2 * inset, h: box.h };
+      // Pixel-shaped collision for images/canvases: the alpha channel is
+      // the collision shape (the web's X11 SHAPE extension).
+      let mask: PixelMask | undefined;
+      let maskDX = 0;
+      let maskDY = 0;
+      if (MASKABLE.has(tag) && hint !== "solid") {
+        const info = this.masks.lookup(el, rect.width, rect.height);
+        if (info.status === "empty") continue; // fully transparent: not solid
+        if (info.status === "masked") {
+          mask = info.mask;
+          maskDX = Math.round(box.x - rect.left);
+          maskDY = Math.round(box.y - rect.top);
+        }
       }
-      if (box.w < MIN_WIDTH) continue;
+
+      // Big rounded corners: stand on the flat part, not the phantom corner
+      // (the mask already handles shape better, when we have one).
+      if (!mask) {
+        const radius = Math.max(
+          parseFloat(st.borderTopLeftRadius) || 0,
+          parseFloat(st.borderTopRightRadius) || 0
+        );
+        if (radius > 8) {
+          const inset = Math.min(radius, box.w / 4);
+          box = { x: box.x + inset, y: box.y, w: box.w - 2 * inset, h: box.h };
+        }
+        if (box.w < MIN_WIDTH) continue;
+      }
 
       if (this.occluded(el, box)) continue;
 
@@ -365,6 +392,9 @@ export class Surfaces {
         y: box.y + sy,
         w: box.w,
         h: box.h,
+        mask,
+        maskDX,
+        maskDY,
       });
     }
 
@@ -391,7 +421,16 @@ export class Surfaces {
       // nothing could ever fall in from above.
       if (s.y <= 0) continue;
       if (s.x >= worldW || s.x + s.w < 0) continue;
-      out.push({ id: s.id, x: Math.round(s.x), y: Math.round(s.y), w: Math.round(s.w), h: Math.round(s.h) });
+      out.push({
+        id: s.id,
+        x: Math.round(s.x),
+        y: Math.round(s.y),
+        w: Math.round(s.w),
+        h: Math.round(s.h),
+        mask: s.mask,
+        maskDX: s.maskDX,
+        maskDY: s.maskDY,
+      });
     }
     return out;
   }

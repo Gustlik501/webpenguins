@@ -3,6 +3,7 @@
 // queries used by toon_core/toon_query. Edge blocking follows xpenguins'
 // TOON_SIDEBOTTOMBLOCK: sides and bottom of the page are solid, the top is
 // open (toons drop in from above).
+import { maskRectHit } from "./masks";
 import { SolidRect } from "./types";
 
 export class World {
@@ -24,10 +25,29 @@ export class World {
     return this.glassY < this.height;
   }
 
-  /** XRectInRegion(...) != RectangleOut */
+  /**
+   * XRectInRegion(...) != RectangleOut. Shaped surfaces (pixel masks from
+   * image alpha channels) collide only where they actually have pixels.
+   */
   intersects(x: number, y: number, w: number, h: number): boolean {
     for (const r of this.rects) {
-      if (x < r.x + r.w && x + w > r.x && y < r.y + r.h && y + h > r.y) return true;
+      if (!(x < r.x + r.w && x + w > r.x && y < r.y + r.h && y + h > r.y)) continue;
+      if (!r.mask) return true;
+      const ox = Math.max(x, r.x);
+      const oy = Math.max(y, r.y);
+      const ow = Math.min(x + w, r.x + r.w) - ox;
+      const oh = Math.min(y + h, r.y + r.h) - oy;
+      if (
+        maskRectHit(
+          r.mask,
+          Math.round(ox - r.x + (r.maskDX ?? 0)),
+          Math.round(oy - r.y + (r.maskDY ?? 0)),
+          Math.max(1, Math.round(ow)),
+          Math.max(1, Math.round(oh))
+        )
+      ) {
+        return true;
+      }
     }
     return false;
   }

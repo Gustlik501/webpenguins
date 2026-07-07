@@ -19,6 +19,23 @@ try {
   await sleep(1500);
   const early = await probe.eval("document.getElementById('out').textContent");
   console.log("EARLY:", early);
+  // Pixel-mask collision: the stones canvas must collide only where drawn.
+  const maskCheck = await probe.eval(`
+    (function () {
+      var w = window.__webpenguins.world;
+      var r = w.rects.filter(function (x) { return x.mask; })[0];
+      if (!r) return "NO-MASKED-RECT";
+      return {
+        rect: r.x + "," + r.y + " " + r.w + "x" + r.h,
+        solidLeftStone: w.intersects(r.x + 60, r.y + 70, 1, 1),
+        gapBetween: w.intersects(r.x + 200, r.y + 70, 1, 1),
+        solidRightStone: w.intersects(r.x + 340, r.y + 70, 1, 1),
+        airAboveStones: w.intersects(r.x + 60, r.y + 10, 1, 1)
+      };
+    })()
+  `);
+  console.log("MASK-CHECK:", JSON.stringify(maskCheck));
+
   await sleep(seconds * 1000);
   const late = await probe.eval("document.getElementById('out').textContent");
   console.log("LATE :", late);

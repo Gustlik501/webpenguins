@@ -86,12 +86,31 @@ export interface GenusData {
   anims: Partial<Record<ToonType, AnimData>>;
 }
 
+/**
+ * A collision bitmask built from an image's alpha channel — the web version
+ * of the X11 SHAPE extension, which the original xpenguins supported (toons
+ * could walk on shaped windows). One bit per CSS pixel at drawn size.
+ */
+export interface PixelMask {
+  w: number;
+  h: number;
+  rowWords: number; // Uint32 words per row
+  bits: Uint32Array;
+  /** First solid row per column (-1 = none); snow settles on this profile. */
+  topProfile: Int16Array;
+}
+
 export interface SolidRect {
   id: number;
   x: number;
   y: number;
   w: number;
   h: number;
+  /** When present, only mask-solid pixels collide (shaped surface). */
+  mask?: PixelMask;
+  /** Mask-space offset of this rect's origin (nonzero when clipped). */
+  maskDX?: number;
+  maskDY?: number;
 }
 
 export interface WebPenguinsOptions {

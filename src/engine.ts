@@ -67,15 +67,17 @@ export class Engine {
     this.world.height = docHeight();
     this.world.viewTop = window.scrollY;
 
+    // Surfaces must exist before anyone spawns — the spawn-safety check
+    // needs a populated world or penguins materialise inside cards.
+    this.surfaces.start();
+    this.world.setRects(this.surfaces.getRects());
+
     const genera = buildGenera(scale);
     const manager = new PenguinManager(this.world, genera, scale);
     this.manager = manager;
     manager.blood = opts.blood ?? true;
     manager.angels = opts.angels ?? true;
     manager.setNumber(opts.penguins ?? manager.defaultNumber());
-
-    this.surfaces.start();
-    this.world.setRects(this.surfaces.getRects());
 
     if (opts.snow !== false && opts.snow !== 0) {
       this.snow = new SnowSystem(

@@ -242,10 +242,19 @@ export class SnowSystem {
       // land on a surface top?
       for (const r of world.rects) {
         if (cx < r.x || cx >= r.x + r.w) continue;
+        const col = Math.max(0, Math.min(Math.round(r.w) - 1, Math.round(cx - r.x)));
+        // Shaped surfaces: snow settles on the pixels' top profile — on the
+        // letters of a logo — and falls straight through the gaps.
+        let baseY = r.y;
+        if (r.mask) {
+          const mx = col + (r.maskDX ?? 0);
+          const p = mx >= 0 && mx < r.mask.topProfile.length ? r.mask.topProfile[mx] : -1;
+          if (p < 0) continue; // transparent column: keep falling
+          baseY = r.y - (r.maskDY ?? 0) + p;
+        }
         let snow = this.fallen.get(r.id);
-        const col = cx - r.x;
-        const depth = snow ? snow.heights[Math.max(0, Math.min(snow.w - 1, Math.round(col)))] : 0;
-        const surfaceY = r.y - depth;
+        const depth = snow ? snow.heights[col] : 0;
+        const surfaceY = baseY - depth;
         if (surfaceY < 6) break; // right at the top of the page — can't settle
         if (prevBottom <= surfaceY && newBottom >= surfaceY) {
           if (!snow) {
@@ -323,7 +332,21 @@ export class SnowSystem {
       if (!snow) continue;
       const rx = r.x - sx;
       const ry = r.y - sy;
-      if (ry > vh || ry < -MAX_DEPTH_SURFACE * s - 4 || rx > vw || rx + r.w < 0) continue;
+      if (ry > vh || ry + r.h < -MAX_DEPTH_SURFACE * s - 4 || rx > vw || rx + r.w < 0) continue;
+      if (r.mask) {
+        // shaped surface: column strips resting on the pixel profile
+        const prof = r.mask.topProfile;
+        for (let c = 0; c < snow.w; c++) {
+          const hgt = snow.heights[c];
+          if (hgt < 0.6) continue;
+          const mx = c + (r.maskDX ?? 0);
+          const p = mx >= 0 && mx < prof.length ? prof[mx] : -1;
+          if (p < 0) continue;
+          const top = ry - (r.maskDY ?? 0) + p;
+          ctx.fillRect(rx + c, top - hgt, 1, hgt);
+        }
+        continue;
+      }
       ctx.beginPath();
       ctx.moveTo(rx, ry);
       const n = snow.w;

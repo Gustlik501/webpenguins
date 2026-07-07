@@ -26,6 +26,16 @@
   <div id="clipper" style="overflow:hidden;height:80px;position:relative;margin:20px 0">
     <div style="background:#4f9d69;width:300px;height:280px"></div>
   </div>
+  <!-- pixel mask: two stones with a gap — collision must follow the pixels -->
+  <canvas id="stones" width="400" height="100" style="display:block;margin:20px 0"></canvas>
+  <script>
+    (function () {
+      var x = document.getElementById("stones").getContext("2d");
+      x.fillStyle = "#88aabb";
+      x.fillRect(0, 40, 120, 60);
+      x.fillRect(280, 40, 120, 60);
+    })();
+  </script>
   <p>More filler text below the fake image.</p>
   <div class="card" style="height:110px">Card two.</div>
 </main>
