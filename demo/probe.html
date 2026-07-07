@@ -28,6 +28,13 @@
   </div>
   <!-- pixel mask: two stones with a gap — collision must follow the pixels -->
   <canvas id="stones" width="400" height="100" style="display:block;margin:20px 0"></canvas>
+  <!-- inline SVG (like the google.com logo): mask from vector shapes.
+       Solid: bar x10-110 y30-70, circle cx240 cy50 r28. Gap in between. -->
+  <svg id="vector" width="300" height="80" viewBox="0 0 300 80"
+       style="display:block;margin:20px 0" role="img" aria-label="shapes">
+    <path d="M10 30 h100 v40 h-100 z" fill="#e94"/>
+    <circle cx="240" cy="50" r="28" fill="#4a90d9"/>
+  </svg>
   <script>
     (function () {
       var x = document.getElementById("stones").getContext("2d");

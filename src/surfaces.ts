@@ -60,8 +60,8 @@ interface Surface {
   maskDY?: number;
 }
 
-// Shaped-collision candidates: their alpha channel is their shape.
-const MASKABLE = new Set(["IMG", "CANVAS"]);
+// Shaped-collision candidates: their rendered alpha is their shape.
+const MASKABLE = new Set(["IMG", "CANVAS", "SVG"]);
 
 interface Box {
   x: number;

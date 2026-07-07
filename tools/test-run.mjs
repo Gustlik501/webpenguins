@@ -36,6 +36,23 @@ try {
   `);
   console.log("MASK-CHECK:", JSON.stringify(maskCheck));
 
+  // Inline-SVG mask (the google.com logo case): vector-rasterized shapes.
+  const svgCheck = await probe.eval(`
+    (function () {
+      var w = window.__webpenguins.world;
+      var r = w.rects.filter(function (x) { return x.mask && x.w === 300; })[0];
+      if (!r) return "NO-SVG-MASK";
+      return {
+        rect: r.x + "," + r.y + " " + r.w + "x" + r.h,
+        solidBar: w.intersects(r.x + 60, r.y + 50, 1, 1),
+        gapBetween: w.intersects(r.x + 165, r.y + 50, 1, 1),
+        solidCircle: w.intersects(r.x + 240, r.y + 50, 1, 1),
+        airAboveBar: w.intersects(r.x + 60, r.y + 10, 1, 1)
+      };
+    })()
+  `);
+  console.log("SVG-MASK-CHECK:", JSON.stringify(svgCheck));
+
   await sleep(seconds * 1000);
   const late = await probe.eval("document.getElementById('out').textContent");
   console.log("LATE :", late);

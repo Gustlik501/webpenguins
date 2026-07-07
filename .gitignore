@@ -2,3 +2,4 @@ node_modules/
 vendor/
 *.log
 .test/
+demo/google-replica.html
