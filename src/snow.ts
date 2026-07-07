@@ -1,6 +1,11 @@
 // The xsnow part: falling flakes (the 7 original pixmaps), gusty wind, snow
-// settling on top of "windows" (here: DOM surfaces) and along the screen
-// bottom, and Santa drifting by at the original xsnow speeds.
+// settling on top of "windows" (here: DOM surfaces) and along the bottom of
+// the page, and Santa drifting by at the original xsnow speeds.
+//
+// Two coordinate spaces meet here: flakes, Santa and the moon are weather —
+// they live in the *viewport* (it always snows where you look). Fallen snow,
+// trees and the snowline at the page bottom are part of the world — they
+// live in *document* coords and stay put when you scroll.
 import { randInt } from "./rng";
 import { getImage, SNOW_ASSETS } from "./sprites";
 import { World } from "./world";
@@ -120,9 +125,13 @@ export class SnowSystem {
   }
 
   resize(): void {
-    // xsnow also drops the fallen snow when the screen changes.
-    this.bottom = { w: this.world.width, heights: new Float32Array(this.world.width) };
-    this.fallen.clear();
+    // xsnow also drops the fallen snow when the screen changes. Keep the
+    // page-bottom snowline if the document merely got taller/shorter with
+    // the same width; rebuild everything on width changes.
+    if (this.bottom.w !== this.world.width) {
+      this.bottom = { w: this.world.width, heights: new Float32Array(this.world.width) };
+      this.fallen.clear();
+    }
     const s = this.opts.scale;
     this.treeXs = [];
     for (let i = 0; i < this.opts.trees; i++) {
@@ -137,8 +146,8 @@ export class SnowSystem {
     const size = this.flakeSizes[type];
     const bigness = size.w / 15; // largest original flake is ~15px
     return {
-      x: Math.random() * this.world.width,
-      y: anywhere ? Math.random() * this.world.height : -10 - Math.random() * 30,
+      x: Math.random() * window.innerWidth,
+      y: anywhere ? Math.random() * window.innerHeight : -10 - Math.random() * 30,
       vy: (36 + Math.random() * 65) * (0.6 + 0.5 * bigness) * this.opts.scale,
       windFactor: 0.35 + Math.random() * 0.65,
       wobblePhase: Math.random() * Math.PI * 2,
@@ -149,8 +158,8 @@ export class SnowSystem {
 
   private resetSanta(initial: boolean): void {
     const f = this.santaFrames[0];
-    this.santaX = -f.w * this.opts.scale - (initial ? Math.random() * this.world.width : 0);
-    this.santaBaseY = 16 + Math.random() * Math.max(40, this.world.height * 0.25);
+    this.santaX = -f.w * this.opts.scale - (initial ? Math.random() * window.innerWidth : 0);
+    this.santaBaseY = 16 + Math.random() * Math.max(40, window.innerHeight * 0.25);
     this.santaWait = initial ? 0 : 4 + Math.random() * 18;
   }
 
@@ -205,6 +214,13 @@ export class SnowSystem {
       if (w === undefined || Math.abs(w - snow.w) > 4) this.fallen.delete(id);
     }
 
+    // Flakes are viewport coords; surfaces and the snowline are document
+    // coords. Convert with the scroll offset.
+    const sx = window.scrollX;
+    const sy = window.scrollY;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
     for (let i = 0; i < this.flakes.length; i++) {
       const f = this.flakes[i];
       const size = this.flakeSizes[f.type];
@@ -212,16 +228,16 @@ export class SnowSystem {
       const fw = size.w * s;
       f.wobblePhase += f.wobbleSpeed * dt;
       const vx = this.windVx * f.windFactor + Math.sin(f.wobblePhase) * 14;
-      const prevBottom = f.y + fh;
+      const prevBottom = f.y + fh + sy;
       f.x += vx * dt;
       f.y += f.vy * dt;
-      const newBottom = f.y + fh;
+      const newBottom = f.y + fh + sy;
 
-      if (f.x < -20) f.x += world.width + 40;
-      else if (f.x > world.width + 20) f.x -= world.width + 40;
+      if (f.x < -20) f.x += vw + 40;
+      else if (f.x > vw + 20) f.x -= vw + 40;
 
       let landed = false;
-      const cx = f.x + fw / 2;
+      const cx = f.x + fw / 2 + sx; // document X
 
       // land on a surface top?
       for (const r of world.rects) {
@@ -230,7 +246,7 @@ export class SnowSystem {
         const col = cx - r.x;
         const depth = snow ? snow.heights[Math.max(0, Math.min(snow.w - 1, Math.round(col)))] : 0;
         const surfaceY = r.y - depth;
-        if (surfaceY < 6) break; // top edge off screen — snow can't settle
+        if (surfaceY < 6) break; // right at the top of the page — can't settle
         if (prevBottom <= surfaceY && newBottom >= surfaceY) {
           if (!snow) {
             snow = { w: Math.round(r.w), heights: new Float32Array(Math.round(r.w)) };
@@ -242,7 +258,7 @@ export class SnowSystem {
         break; // only the first surface under this flake matters
       }
 
-      // land on the screen bottom?
+      // land on the bottom of the page? (only reachable when it's in view)
       if (!landed && this.bottom.w > 0) {
         const col = Math.max(0, Math.min(this.bottom.w - 1, Math.round(cx)));
         const surfaceY = world.height - this.bottom.heights[col];
@@ -252,7 +268,7 @@ export class SnowSystem {
         }
       }
 
-      if (landed || f.y > world.height) {
+      if (landed || f.y > vh) {
         this.flakes[i] = this.newFlake(false);
       }
     }
@@ -273,12 +289,17 @@ export class SnowSystem {
   drawUnder(ctx: CanvasRenderingContext2D): void {
     const s = this.opts.scale;
     const world = this.world;
+    const sx = window.scrollX;
+    const sy = window.scrollY;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
     ctx.imageSmoothingEnabled = false;
 
+    // sky objects: viewport coords
     if (this.opts.moon) {
       const mw = SNOW_ASSETS.moon.width * s;
       const mh = SNOW_ASSETS.moon.height * s;
-      ctx.drawImage(this.moonImg, world.width - mw - 28, 22, mw, mh);
+      ctx.drawImage(this.moonImg, vw - mw - 28, 22, mw, mh);
     }
 
     if (this.santaFrames.length && this.santaWait <= 0) {
@@ -287,14 +308,11 @@ export class SnowSystem {
       ctx.drawImage(frame.img, Math.round(this.santaX), Math.round(y), frame.w * s, frame.h * s);
     }
 
+    // world objects: document coords, camera-shifted
     for (const x of this.treeXs) {
-      ctx.drawImage(
-        this.treeImg,
-        x,
-        world.height - this.treeH * s + 1,
-        this.treeW * s,
-        this.treeH * s
-      );
+      const ty = world.height - this.treeH * s + 1 - sy;
+      if (ty > vh || ty + this.treeH * s < 0) continue;
+      ctx.drawImage(this.treeImg, x - sx, ty, this.treeW * s, this.treeH * s);
     }
 
     ctx.fillStyle = this.snowColor;
@@ -303,28 +321,32 @@ export class SnowSystem {
     for (const r of world.rects) {
       const snow = this.fallen.get(r.id);
       if (!snow) continue;
+      const rx = r.x - sx;
+      const ry = r.y - sy;
+      if (ry > vh || ry < -MAX_DEPTH_SURFACE * s - 4 || rx > vw || rx + r.w < 0) continue;
       ctx.beginPath();
-      ctx.moveTo(r.x, r.y);
+      ctx.moveTo(rx, ry);
       const n = snow.w;
       for (let c = 0; c < n; c += 2) {
-        ctx.lineTo(r.x + c, r.y - snow.heights[c]);
+        ctx.lineTo(rx + c, ry - snow.heights[c]);
       }
-      ctx.lineTo(r.x + n, r.y - snow.heights[n - 1]);
-      ctx.lineTo(r.x + n, r.y);
+      ctx.lineTo(rx + n, ry - snow.heights[n - 1]);
+      ctx.lineTo(rx + n, ry);
       ctx.closePath();
       ctx.fill();
     }
 
-    // snow along the bottom of the screen
-    if (this.bottom.w > 0) {
+    // the snowline along the bottom of the page
+    const by = world.height - sy;
+    if (this.bottom.w > 0 && by > 0 && by - MAX_DEPTH_BOTTOM * s < vh) {
       const h = this.bottom.heights;
       ctx.beginPath();
-      ctx.moveTo(0, world.height);
+      ctx.moveTo(-sx, by);
       for (let c = 0; c < this.bottom.w; c += 2) {
-        ctx.lineTo(c, world.height - h[c]);
+        ctx.lineTo(c - sx, by - h[c]);
       }
-      ctx.lineTo(this.bottom.w, world.height - h[this.bottom.w - 1]);
-      ctx.lineTo(this.bottom.w, world.height);
+      ctx.lineTo(this.bottom.w - sx, by - h[this.bottom.w - 1]);
+      ctx.lineTo(this.bottom.w - sx, by);
       ctx.closePath();
       ctx.fill();
     }

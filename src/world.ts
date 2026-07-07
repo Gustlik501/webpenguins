@@ -1,12 +1,14 @@
-// The collision world: the viewport is the "screen", DOM elements are the
-// "windows". Port of the X Region queries used by toon_core/toon_query.
-// Edge blocking follows xpenguins' TOON_SIDEBOTTOMBLOCK: sides and bottom of
-// the screen are solid, the top is open (toons drop in from above).
+// The collision world: the *document* is the "screen", DOM elements are the
+// "windows", and scrolling only moves the camera. Port of the X Region
+// queries used by toon_core/toon_query. Edge blocking follows xpenguins'
+// TOON_SIDEBOTTOMBLOCK: sides and bottom of the page are solid, the top is
+// open (toons drop in from above).
 import { SolidRect } from "./types";
 
 export class World {
-  width = 0;
-  height = 0;
+  width = 0; // document width
+  height = 0; // document height
+  viewTop = 0; // document Y of the viewport top (where the user is looking)
   rects: SolidRect[] = [];
   prevRects: SolidRect[] = [];
 

@@ -51,7 +51,7 @@ await flock.stop();          // the classic exit: everyone lights a bomb 💣
 | `blood`                | `true`     | allow splat/zap deaths; set `false` for the child-friendly mode (`--no-blood` in the original) |
 | `angels`               | `true`     | exploded penguins ascend |
 | `zapOnClick`           | `true`     | clicking a penguin zaps it |
-| `scale`                | `"auto"`   | sprite scale; `"auto"` picks 2× on wide viewports |
+| `scale`                | `1`        | sprite scale; `1` = the original sizes, `2` for chunky pixels |
 | `snowColor`            | `"auto"`   | snow-white on dark pages, soft slate on light pages |
 | `respectReducedMotion` | `true`     | do nothing if the user prefers reduced motion |
 
@@ -77,12 +77,15 @@ no background worker, no messaging, no page-visible globals.
   velocity, 1-in-100 book readings), same window-association mechanic.
 - **`src/surfaces.ts`** — the web replacement for `ToonLocateWindows()`:
   scans the page for things that read as solid boxes (images, cards, code
-  blocks, headings, buttons…), in viewport coordinates. Scrolling shifts every
-  rect at once, so to the engine it looks like all the windows moving — 
-  penguins ride surfaces if you scroll gently and lose their footing if you
-  flick. An element scrolled into a penguin squashes it, exactly like a moving
-  X11 window. Surfaces touching the top of the screen aren't solid (ditto the
-  original, so toons can always drop in).
+  blocks, headings, buttons…). The **document is the desktop**: everything
+  lives in page coordinates and scrolling only moves the camera, so penguins
+  stay alive and keep doing their thing whether they're on screen or not.
+  Only real layout changes count as "windows moving" and go through the
+  original association/relocation machinery — an accordion expanding into a
+  penguin still squashes it, exactly like a moving X11 window. Surfaces
+  touching the top of the page aren't solid (ditto the original, so toons can
+  always drop in), and new arrivals parachute in just above wherever you're
+  currently looking.
 - **`src/snow.ts`** — xsnow: the 7 original flake sprites, gusty wind, snow
   height-maps building up on surface tops and the screen bottom, Santa at the
   original 12/25/50 px/s speeds, optional tannenbaums and moon.

@@ -1,12 +1,11 @@
 // The web equivalent of ToonLocateWindows(): find DOM elements that read as
 // solid "windows" a toon can walk on, climb, and be squashed by.
 //
-// Scroll handling: element rects are cached in viewport coordinates together
-// with the scroll position at scan time; between rescans they are shifted by
-// the scroll delta. To the engine, scrolling therefore looks exactly like
-// every X11 window moving at once — toons ride surfaces via the association
-// mechanism, and fall off if you scroll faster than they can hold on. Fixed
-// elements simply don't move, again just like the original.
+// Everything lives in *document* coordinates: the page is the desktop and
+// scrolling merely moves the camera. Toons keep living on their surfaces
+// whether they are on screen or not. Only real layout changes (rescans that
+// move a rect) count as "windows moving" and go through the association /
+// relocation / squash machinery of the original.
 import { SolidRect } from "./types";
 
 // Tags that are always window-like when visible and big enough.
@@ -49,19 +48,18 @@ const MAYBE_SOLID = new Set([
   "SVG",
 ]);
 
-const MAX_SURFACES = 64;
+const MAX_SURFACES = 128;
 const MIN_WIDTH = 44;
 const MIN_HEIGHT = 14;
 
 interface Surface {
   id: number;
   el: Element;
-  // viewport coords at scan time
+  // document coords
   x: number;
   y: number;
   w: number;
   h: number;
-  fixed: boolean;
 }
 
 let nextId = 1;
@@ -94,11 +92,7 @@ function looksLikeCard(style: CSSStyleDeclaration): boolean {
 
 export class Surfaces {
   private surfaces: Surface[] = [];
-  private scanScrollX = 0;
-  private scanScrollY = 0;
   private generation = 0;
-  private lastTickScrollX = -1;
-  private lastTickScrollY = -1;
   private lastTickGeneration = -1;
   private rescanTimer: ReturnType<typeof setTimeout> | undefined;
   private intervalTimer: ReturnType<typeof setInterval> | undefined;
@@ -110,15 +104,12 @@ export class Surfaces {
 
     const schedule = (delay: number) => this.scheduleRescan(delay);
 
-    const onScroll = () => schedule(150);
     const onResize = () => schedule(100);
     const onLoad = () => schedule(200);
-    window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onResize);
     // Image loads (etc.) shift layout without DOM mutations.
     window.addEventListener("load", onLoad, true);
     this.listeners.push(
-      () => window.removeEventListener("scroll", onScroll),
       () => window.removeEventListener("resize", onResize),
       () => window.removeEventListener("load", onLoad, true)
     );
@@ -179,56 +170,44 @@ export class Surfaces {
       const style = getComputedStyle(el);
       if (style.visibility === "hidden" || style.display === "none") continue;
       if (parseFloat(style.opacity) < 0.15) continue;
+      // Fixed/sticky elements are glued to the viewport, not the page — in a
+      // document-space world they would bulldoze toons on every scroll.
+      if (style.position === "fixed" || style.position === "sticky") continue;
       if (!always && !looksLikeCard(style)) continue;
 
       accepted.push(el);
       found.push({
         id: idFor(el),
         el,
-        x: rect.left,
-        y: rect.top,
+        x: rect.left + window.scrollX,
+        y: rect.top + window.scrollY,
         w: rect.width,
         h: rect.height,
-        fixed: style.position === "fixed" || style.position === "sticky",
       });
     }
 
     this.surfaces = found;
-    this.scanScrollX = window.scrollX;
-    this.scanScrollY = window.scrollY;
     this.generation++;
   }
 
-  /** Current solid rects in viewport coordinates. */
+  /** Current solid rects in document coordinates. */
   getRects(): SolidRect[] {
-    const dx = window.scrollX - this.scanScrollX;
-    const dy = window.scrollY - this.scanScrollY;
-    const vh = window.innerHeight;
-    const vw = window.innerWidth;
+    const worldW = document.documentElement.clientWidth;
     const out: SolidRect[] = [];
     for (const s of this.surfaces) {
-      const x = s.fixed ? s.x : s.x - dx;
-      const y = s.fixed ? s.y : s.y - dy;
-      // Same exclusions as ToonLocateWindows: fully offscreen surfaces are
-      // not solid, and neither is anything touching the top of the screen —
-      // otherwise nothing could ever fall in from above.
-      if (y <= 0) continue;
-      if (y >= vh || x >= vw || x + s.w < 0) continue;
-      out.push({ id: s.id, x: Math.round(x), y: Math.round(y), w: Math.round(s.w), h: Math.round(s.h) });
+      // Same exclusions as ToonLocateWindows, applied to the document: a
+      // surface touching the top of the page is not solid — otherwise
+      // nothing could ever fall in from above.
+      if (s.y <= 0) continue;
+      if (s.x >= worldW || s.x + s.w < 0) continue;
+      out.push({ id: s.id, x: Math.round(s.x), y: Math.round(s.y), w: Math.round(s.w), h: Math.round(s.h) });
     }
     return out;
   }
 
-  /** Did anything move since this was last called? (scroll or rescan) */
+  /** Did the layout change since this was last called? (scrolling doesn't) */
   movedSinceLastTick(): boolean {
-    const sx = window.scrollX;
-    const sy = window.scrollY;
-    const moved =
-      sx !== this.lastTickScrollX ||
-      sy !== this.lastTickScrollY ||
-      this.generation !== this.lastTickGeneration;
-    this.lastTickScrollX = sx;
-    this.lastTickScrollY = sy;
+    const moved = this.generation !== this.lastTickGeneration;
     this.lastTickGeneration = this.generation;
     return moved;
   }

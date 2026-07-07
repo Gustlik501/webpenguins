@@ -85,9 +85,17 @@ export class PenguinManager {
     p.prefDirection = -1;
     p.prefClimb = false;
     p.direction = randInt(2);
-    p.setPosition(randInt(Math.max(1, this.world.width - data.width)), 1 - data.height);
     p.setAssociation(null);
     p.setVelocity((p.direction * 2 - 1) * this.scale, data.speed);
+    // Drop in just above wherever the user is looking, so arrivals are seen.
+    // If every spot up there is inside a solid, fall back to the document
+    // top, which the y <= 0 surface rule keeps clear (like the original).
+    const y = Math.max(1 - data.height, this.world.viewTop + 1 - data.height);
+    for (let attempt = 0; attempt < 30; attempt++) {
+      p.setPosition(randInt(Math.max(1, this.world.width - data.width)), y);
+      if (!p.blocked("here")) return;
+    }
+    p.setPosition(randInt(Math.max(1, this.world.width - data.width)), 1 - data.height);
   }
 
   private makeClimber(p: Toon): void {

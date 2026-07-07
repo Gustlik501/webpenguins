@@ -12,8 +12,21 @@ import { World } from "./world";
 const MAX_CATCHUP_TICKS = 3;
 
 function resolveScale(scale: number | "auto" | undefined): number {
+  // Default 1: the original sprite sizes.
   if (typeof scale === "number" && scale > 0) return Math.min(4, scale);
-  return window.innerWidth >= 1440 ? 2 : 1;
+  return 1;
+}
+
+function docWidth(): number {
+  return document.documentElement.clientWidth;
+}
+
+function docHeight(): number {
+  return Math.max(
+    document.documentElement.scrollHeight,
+    document.body ? document.body.scrollHeight : 0,
+    document.documentElement.clientHeight
+  );
 }
 
 export class Engine {
@@ -48,8 +61,9 @@ export class Engine {
 
     const renderer = new Renderer(opts.zIndex ?? 2147483641);
     this.renderer = renderer;
-    this.world.width = renderer.width;
-    this.world.height = renderer.height;
+    this.world.width = docWidth();
+    this.world.height = docHeight();
+    this.world.viewTop = window.scrollY;
 
     const genera = buildGenera(scale);
     const manager = new PenguinManager(this.world, genera, scale);
@@ -78,8 +92,8 @@ export class Engine {
 
     const onResize = () => {
       renderer.resize();
-      this.world.width = renderer.width;
-      this.world.height = renderer.height;
+      this.world.width = docWidth();
+      this.world.height = docHeight();
       this.snow?.resize();
     };
     window.addEventListener("resize", onResize);
@@ -87,7 +101,9 @@ export class Engine {
 
     if (opts.zapOnClick ?? true) {
       const onPointerDown = (e: PointerEvent) => {
-        if (!this.terminating) this.zaps.push({ x: e.clientX, y: e.clientY });
+        if (!this.terminating) {
+          this.zaps.push({ x: e.clientX + window.scrollX, y: e.clientY + window.scrollY });
+        }
       };
       window.addEventListener("pointerdown", onPointerDown, true);
       this.cleanups.push(() => window.removeEventListener("pointerdown", onPointerDown, true));
@@ -146,10 +162,18 @@ export class Engine {
     this.rafId = requestAnimationFrame(this.loop);
   };
 
-  /** One 60ms world tick: surfaces move (scroll), then everyone thinks. */
+  /** One 60ms world tick. Only layout changes count as "windows moving". */
   private tick(): number {
     const manager = this.manager!;
+    this.world.viewTop = window.scrollY;
     if (this.surfaces.movedSinceLastTick()) {
+      const w = docWidth();
+      const h = docHeight();
+      if (w !== this.world.width || h !== this.world.height) {
+        this.world.width = w;
+        this.world.height = h;
+        this.snow?.resize();
+      }
       manager.calculateAssociations(this.world.rects);
       this.world.setRects(this.surfaces.getRects());
       manager.relocateAssociated();
@@ -162,6 +186,9 @@ export class Engine {
   private draw(): void {
     const renderer = this.renderer!;
     const manager = this.manager!;
+    // The camera: document coords minus scroll.
+    const sx = window.scrollX;
+    const sy = window.scrollY;
     renderer.begin();
     this.snow?.drawUnder(renderer.ctx);
     for (let i = 0; i < manager.penguinNumber; i++) {
@@ -171,7 +198,12 @@ export class Engine {
         continue;
       }
       const anim = p.data();
-      renderer.drawSprite(anim, p.frame, p.direction, p.x, p.y);
+      const vx = p.x - sx;
+      const vy = p.y - sy;
+      if (vx + anim.width > 0 && vx < renderer.width && vy + anim.height > 0 && vy < renderer.height) {
+        renderer.drawSprite(anim, p.frame, p.direction, vx, vy);
+      }
+      // Hit box for zapping, in document coords (like the click points).
       p.mapX = p.x;
       p.mapY = p.y;
       p.mapW = anim.width;

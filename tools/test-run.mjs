@@ -23,9 +23,26 @@ try {
   const late = await probe.eval("document.getElementById('out').textContent");
   console.log("LATE :", late);
 
-  // scroll and see whether toons ride / react
-  await probe.eval("window.scrollTo({top: 300, behavior: 'instant'}); 'ok'");
-  await sleep(3000);
+  // Scrolling must be a pure camera move: same rects, nobody dies.
+  const statesBefore = await probe.eval(
+    "window.__webpenguins.manager.toons.slice(0, window.__webpenguins.manager.penguinNumber).map(function(p){return p.type;})"
+  );
+  await probe.eval("window.scrollTo({top: 400, behavior: 'instant'}); 'ok'");
+  await sleep(500);
+  const statesAfter = await probe.eval(
+    "window.__webpenguins.manager.toons.slice(0, window.__webpenguins.manager.penguinNumber).map(function(p){return p.type;})"
+  );
+  const deaths = ["explosion", "zapped", "squashed", "angel", "splatted"];
+  const beforeDeaths = statesBefore.filter((t) => deaths.includes(t)).length;
+  const afterDeaths = statesAfter.filter((t) => deaths.includes(t)).length;
+  console.log(
+    "SCROLL-SAFETY:",
+    afterDeaths <= beforeDeaths ? "OK" : "FAIL",
+    "| before:",
+    statesBefore.join(","),
+    "| after:",
+    statesAfter.join(",")
+  );
   console.log("SCROLLED:", await probe.eval("document.getElementById('out').textContent"));
   await probe.screenshot(path.join(shots, "probe.png"));
   probe.close();
@@ -49,6 +66,10 @@ try {
   console.log("DEMO RECTS:", JSON.stringify(rects));
   await sleep(seconds * 1000);
   await demo.screenshot(path.join(shots, "demo.png"));
+  // the page bottom: desktop floor, trees, snowline
+  await demo.eval("window.scrollTo({top: 1e9, behavior: 'instant'}); 'ok'");
+  await sleep(5000);
+  await demo.screenshot(path.join(shots, "demo-bottom.png"));
   demo.close();
   console.log("screenshots written to", shots);
 } finally {
