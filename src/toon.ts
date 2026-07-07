@@ -120,6 +120,8 @@ export class Toon {
         return w.intersects(this.x, this.y - 1, data.width, 1);
       case "down":
         if (this.y + data.height >= w.height) return true;
+        // standing exactly on the glass floor counts as support
+        if (w.glassActive() && Math.abs(this.y + data.height - w.glassY) < 1) return true;
         return w.intersects(this.x, this.y + data.height, data.width, 1);
       case "here":
         return w.intersects(this.x, this.y, data.width, data.height);
@@ -215,6 +217,12 @@ export class Toon {
       // top of screen is open; bottom is solid
       if (newy + height > w.height) {
         newy = w.height - height;
+        result = TOON_PARTIALMOVE;
+      }
+      // The glass floor at the bottom of the viewport is one-way: it stops
+      // downward crossings from above, but toons already below it are free.
+      if (w.glassActive() && this.y + height <= w.glassY && newy + height > w.glassY) {
+        newy = w.glassY - height;
         result = TOON_PARTIALMOVE;
       }
       if (newx === this.x && newy === this.y && !stationary) {

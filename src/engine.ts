@@ -42,6 +42,7 @@ export class Engine {
   private acc = 0;
   private destroyed = false;
   private terminating = false;
+  private scale = 1;
   // debug instrumentation (exposed via the `debug` option)
   loopCount = 0;
   tickCount = 0;
@@ -58,6 +59,7 @@ export class Engine {
     if (this.destroyed) return;
     const opts = this.opts;
     const scale = resolveScale(opts.scale);
+    this.scale = scale;
 
     const renderer = new Renderer(opts.zIndex ?? 2147483641);
     this.renderer = renderer;
@@ -166,6 +168,7 @@ export class Engine {
   private tick(): number {
     const manager = this.manager!;
     this.world.viewTop = window.scrollY;
+    this.updateGlassFloor();
     if (this.surfaces.movedSinceLastTick()) {
       const w = docWidth();
       const h = docHeight();
@@ -181,6 +184,37 @@ export class Engine {
     const remaining = manager.frame(this.zaps);
     this.zaps.length = 0;
     return remaining;
+  }
+
+  /**
+   * Move the glass floor to the viewport's bottom edge and carry whoever is
+   * standing on it — the same ride-or-fall feel as the original's moving
+   * windows: gentle scrolls are an elevator, flicks drop them.
+   */
+  private updateGlassFloor(): void {
+    const manager = this.manager!;
+    const world = this.world;
+    const oldGlass = world.glassY;
+    const newGlass = Math.min(Math.round(window.scrollY + window.innerHeight), world.height);
+    if (newGlass === oldGlass) return;
+    const dg = newGlass - oldGlass;
+    if (Number.isFinite(dg) && dg !== 0) {
+      const maxRide = 48 * this.scale;
+      for (let i = 0; i < manager.penguinNumber; i++) {
+        const t = manager.toons[i];
+        if (!t.active || t.association !== "down") continue;
+        const data = t.data();
+        if (Math.abs(t.y + data.height - oldGlass) >= 1) continue;
+        // Standing on real ground that happens to align? Then it's not ours.
+        if (world.intersects(t.x, t.y + data.height, data.width, 1)) continue;
+        if (Math.abs(dg) <= maxRide && !t.offsetBlocked(0, dg)) {
+          t.move(0, dg);
+        }
+        // Otherwise leave them: physics turns them into tumblers (scroll
+        // down) or lets them live below the glass (scroll up).
+      }
+    }
+    world.glassY = newGlass;
   }
 
   private draw(): void {

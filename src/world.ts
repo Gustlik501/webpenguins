@@ -9,8 +9,20 @@ export class World {
   width = 0; // document width
   height = 0; // document height
   viewTop = 0; // document Y of the viewport top (where the user is looking)
+  /**
+   * The "glass floor": the document Y of the viewport's bottom edge. It is a
+   * one-way collider — falling toons land on it, so nothing ever drops out of
+   * sight on endless pages, but toons already living below it (on surfaces
+   * further down the document) are unaffected. Inactive when it coincides
+   * with the document bottom.
+   */
+  glassY = Infinity;
   rects: SolidRect[] = [];
   prevRects: SolidRect[] = [];
+
+  glassActive(): boolean {
+    return this.glassY < this.height;
+  }
 
   /** XRectInRegion(...) != RectangleOut */
   intersects(x: number, y: number, w: number, h: number): boolean {

@@ -75,17 +75,28 @@ no background worker, no messaging, no page-visible globals.
   `xpenguins_core.c`): same collision interpolation, same 8px step height,
   same probabilities (1-in-2 climb-vs-drift, 1-in-3 splats at terminal
   velocity, 1-in-100 book readings), same window-association mechanic.
-- **`src/surfaces.ts`** — the web replacement for `ToonLocateWindows()`:
-  scans the page for things that read as solid boxes (images, cards, code
-  blocks, headings, buttons…). The **document is the desktop**: everything
-  lives in page coordinates and scrolling only moves the camera, so penguins
-  stay alive and keep doing their thing whether they're on screen or not.
-  Only real layout changes count as "windows moving" and go through the
-  original association/relocation machinery — an accordion expanding into a
-  penguin still squashes it, exactly like a moving X11 window. Surfaces
-  touching the top of the page aren't solid (ditto the original, so toons can
-  always drop in), and new arrivals parachute in just above wherever you're
-  currently looking.
+- **`src/surfaces.ts`** — the web replacement for `ToonLocateWindows()`,
+  and it is style-aware: a box is only solid if it actually **paints**
+  something visible — a background that differs from the effective backdrop
+  behind it, a visible border/outline/shadow on any side, a gradient, or
+  real replaced content (a *loaded* image, a video…). Bare headings collide
+  with their text's ink box instead of their full-width layout box, rects
+  are clipped by `overflow: hidden` ancestors, big rounded corners are inset
+  so penguins stand on the flat top, and boxes hidden behind overlays are
+  dropped (`elementFromPoint` sampling). The **document is the desktop**:
+  everything lives in page coordinates and scrolling only moves the camera,
+  so penguins stay alive whether on screen or not. Only real layout changes
+  count as "windows moving" and go through the original
+  association/relocation machinery — an accordion expanding into a penguin
+  still squashes it, exactly like a moving X11 window. Surfaces touching the
+  top of the page aren't solid (ditto the original, so toons can always drop
+  in), and new arrivals parachute in just above wherever you're looking.
+- **The glass floor** — the viewport's bottom edge is a one-way collider:
+  falling penguins land on it, so on endless/infinite-scroll pages nothing
+  ever falls out of sight. Gentle scrolling carries the penguins standing on
+  it like an elevator; flick-scrolling drops them. It never pulls up toons
+  living on surfaces below it, and the true page bottom remains the world's
+  hard floor.
 - **`src/snow.ts`** — xsnow: the 7 original flake sprites, gusty wind, snow
   height-maps building up on surface tops and the screen bottom, Santa at the
   original 12/25/50 px/s speeds, optional tannenbaums and moon.

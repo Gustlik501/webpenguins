@@ -1,61 +1,62 @@
 // The web equivalent of ToonLocateWindows(): find DOM elements that read as
 // solid "windows" a toon can walk on, climb, and be squashed by.
 //
+// v2 is style-aware: a box is only solid if it actually *paints* something a
+// person can see — a background that differs from what's behind it, a
+// visible border or shadow, real replaced content (a loaded image, a video).
+// Bare headings collide with their text's ink box rather than their layout
+// box, rects are clipped by overflow-hidden ancestors, big rounded corners
+// are inset, and boxes hidden behind overlays are dropped.
+//
 // Everything lives in *document* coordinates: the page is the desktop and
-// scrolling merely moves the camera. Toons keep living on their surfaces
-// whether they are on screen or not. Only real layout changes (rescans that
-// move a rect) count as "windows moving" and go through the association /
-// relocation / squash machinery of the original.
+// scrolling merely moves the camera. Only real layout changes (rescans that
+// move a rect) count as "windows moving".
 import { SolidRect } from "./types";
 
-// Tags that are always window-like when visible and big enough.
-const ALWAYS_SOLID = new Set([
-  "IMG",
-  "VIDEO",
-  "CANVAS",
-  "IFRAME",
-  "OBJECT",
-  "EMBED",
-  "PRE",
-  "TABLE",
-  "FIGURE",
-  "BLOCKQUOTE",
-  "BUTTON",
-  "TEXTAREA",
-  "SELECT",
-  "HR",
-  "H1",
-  "H2",
-  "H3",
-  "NAV",
+const NEVER_SOLID = new Set([
+  "SCRIPT",
+  "STYLE",
+  "TEMPLATE",
+  "NOSCRIPT",
+  "HEAD",
+  "TITLE",
+  "META",
+  "LINK",
+  "BASE",
+  "BR",
+  "WBR",
+  "AREA",
+  "MAP",
+  "OPTION",
+  "OPTGROUP",
+  "DATALIST",
+  "SOURCE",
+  "TRACK",
+  "COL",
+  "COLGROUP",
 ]);
 
-// Tags that count only if they look like a visual "card".
-const MAYBE_SOLID = new Set([
-  "DIV",
-  "SECTION",
-  "ARTICLE",
-  "ASIDE",
-  "HEADER",
-  "FOOTER",
-  "MAIN",
-  "FORM",
-  "DETAILS",
-  "FIELDSET",
-  "DIALOG",
-  "A",
-  "LI",
-  "SVG",
-]);
+// Replaced/embedded content paints by nature (images must actually be loaded).
+const REPLACED = new Set(["IMG", "VIDEO", "IFRAME", "OBJECT", "EMBED", "CANVAS", "SVG"]);
+const HEADINGS = new Set(["H1", "H2", "H3", "H4"]);
 
-const MAX_SURFACES = 128;
+const MAX_SURFACES = 160; // nearest to the viewport win
+const MAX_COLLECTED = 320;
+const MAX_EXAMINED = 6000;
 const MIN_WIDTH = 44;
-const MIN_HEIGHT = 14;
+const MIN_HEIGHT = 10;
 
 interface Surface {
   id: number;
   el: Element;
   // document coords
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+interface Box {
   x: number;
   y: number;
   w: number;
@@ -74,19 +75,57 @@ function idFor(el: Element): number {
   return id;
 }
 
-function looksLikeCard(style: CSSStyleDeclaration): boolean {
-  if (style.boxShadow !== "none") return true;
-  if (parseFloat(style.borderTopWidth) > 0 && style.borderTopStyle !== "none") return true;
-  const bg = style.backgroundColor;
-  if (bg && bg !== "transparent") {
-    const m = /rgba?\(([^)]+)\)/.exec(bg);
-    if (m) {
-      const parts = m[1].split(",");
-      const alpha = parts.length === 4 ? parseFloat(parts[3]) : 1;
-      if (alpha > 0.1) return true;
+// ---------------------------------------------------------------- colors
+
+function parseColor(c: string): [number, number, number, number] | null {
+  const m = /rgba?\(([^)]+)\)/.exec(c);
+  if (!m) return null;
+  const p = m[1]
+    .split(/[,\s/]+/)
+    .filter(Boolean)
+    .map(parseFloat);
+  if (p.length < 3 || p.some((n) => Number.isNaN(n))) return null;
+  return [p[0], p[1], p[2], p.length >= 4 ? p[3] : 1];
+}
+
+function alphaOf(c: string): number {
+  if (!c || c === "transparent") return 0;
+  const parsed = parseColor(c);
+  return parsed ? parsed[3] : 1; // named/hex colors: assume opaque
+}
+
+/** Would a human notice the difference between these two colors? */
+function colorsDiffer(a: string, b: string): boolean {
+  const pa = parseColor(a);
+  const pb = parseColor(b);
+  if (!pa || !pb) return true; // can't tell — be permissive
+  return (
+    Math.max(Math.abs(pa[0] - pb[0]), Math.abs(pa[1] - pb[1]), Math.abs(pa[2] - pb[2])) > 12 ||
+    Math.abs(pa[3] - pb[3]) > 0.2
+  );
+}
+
+function shadowVisible(boxShadow: string): boolean {
+  if (!boxShadow || boxShadow === "none") return false;
+  // If it only uses rgba() colors, at least one must be non-transparent.
+  const rgbas = boxShadow.match(/rgba?\([^)]+\)/g);
+  if (!rgbas) return true;
+  return rgbas.some((c) => alphaOf(c) > 0.05);
+}
+
+function hasVisibleBorder(st: CSSStyleDeclaration): boolean {
+  for (const side of ["top", "right", "bottom", "left"]) {
+    if (
+      parseFloat(st.getPropertyValue(`border-${side}-width`)) > 0 &&
+      st.getPropertyValue(`border-${side}-style`) !== "none" &&
+      alphaOf(st.getPropertyValue(`border-${side}-color`)) > 0.05
+    ) {
+      return true;
     }
   }
-  if (style.backgroundImage !== "none") return true;
+  if (st.outlineStyle !== "none" && parseFloat(st.outlineWidth) > 0 && alphaOf(st.outlineColor) > 0.05) {
+    return true;
+  }
   return false;
 }
 
@@ -98,6 +137,9 @@ export class Surfaces {
   private intervalTimer: ReturnType<typeof setInterval> | undefined;
   private observer: MutationObserver | undefined;
   private listeners: Array<() => void> = [];
+  // per-scan memoization
+  private backdropCache = new Map<Element, string>();
+  private gluedCache = new Map<Element, boolean>();
 
   start(): void {
     this.scan();
@@ -106,12 +148,16 @@ export class Surfaces {
 
     const onResize = () => schedule(100);
     const onLoad = () => schedule(200);
+    // Scrolling doesn't move document-space rects, but the surface window
+    // (we keep the ~160 boxes nearest the viewport) should follow the user.
+    const onScroll = () => schedule(300);
     window.addEventListener("resize", onResize);
-    // Image loads (etc.) shift layout without DOM mutations.
     window.addEventListener("load", onLoad, true);
+    window.addEventListener("scroll", onScroll, { passive: true });
     this.listeners.push(
       () => window.removeEventListener("resize", onResize),
-      () => window.removeEventListener("load", onLoad, true)
+      () => window.removeEventListener("load", onLoad, true),
+      () => window.removeEventListener("scroll", onScroll)
     );
 
     this.observer = new MutationObserver(() => schedule(250));
@@ -140,50 +186,195 @@ export class Surfaces {
     this.rescanTimer = setTimeout(() => this.scan(), delay);
   }
 
+  /** The effective background color behind an element (or "complex"). */
+  private backdropOf(el: Element): string {
+    let cur = el.parentElement;
+    while (cur) {
+      const cached = this.backdropCache.get(cur);
+      if (cached !== undefined) return cached;
+      const st = getComputedStyle(cur);
+      let result: string | null = null;
+      if (st.backgroundImage !== "none") result = "complex";
+      else if (alphaOf(st.backgroundColor) >= 0.15) result = st.backgroundColor;
+      if (result !== null) {
+        this.backdropCache.set(cur, result);
+        return result;
+      }
+      cur = cur.parentElement;
+    }
+    return "rgb(255, 255, 255)"; // the browser's default canvas
+  }
+
+  /** Does this element paint something a person can actually see? */
+  private paints(el: Element, st: CSSStyleDeclaration): boolean {
+    const tag = el.tagName.toUpperCase();
+    if (tag === "IMG") {
+      const img = el as HTMLImageElement;
+      return img.complete && img.naturalWidth > 0;
+    }
+    if (REPLACED.has(tag)) return true;
+    if (hasVisibleBorder(st)) return true;
+    if (shadowVisible(st.boxShadow)) return true;
+    if (st.backgroundImage !== "none") return true;
+    if (alphaOf(st.backgroundColor) >= 0.15) {
+      const backdrop = this.backdropOf(el);
+      // A background identical to what's behind it is invisible.
+      return backdrop === "complex" || colorsDiffer(st.backgroundColor, backdrop);
+    }
+    return false;
+  }
+
+  /** Is the element (or an ancestor) glued to the viewport? */
+  private viewportGlued(el: Element): boolean {
+    let cur: Element | null = el;
+    while (cur && cur !== document.documentElement) {
+      let glued = this.gluedCache.get(cur);
+      if (glued === undefined) {
+        const pos = getComputedStyle(cur).position;
+        glued = pos === "fixed" || pos === "sticky";
+        this.gluedCache.set(cur, glued);
+      }
+      if (glued) return true;
+      cur = cur.parentElement;
+    }
+    return false;
+  }
+
+  /** Clip a (viewport-coords) box by every overflow-hiding ancestor. */
+  private clipByAncestors(el: Element, box: Box): Box | null {
+    let cur = el.parentElement;
+    let clipped = box;
+    while (cur && cur !== document.body && cur !== document.documentElement) {
+      const st = getComputedStyle(cur);
+      if (/(hidden|clip|auto|scroll)/.test(st.overflow + st.overflowX + st.overflowY)) {
+        const cr = cur.getBoundingClientRect();
+        const x1 = Math.max(clipped.x, cr.left);
+        const y1 = Math.max(clipped.y, cr.top);
+        const x2 = Math.min(clipped.x + clipped.w, cr.right);
+        const y2 = Math.min(clipped.y + clipped.h, cr.bottom);
+        if (x2 - x1 < MIN_WIDTH || y2 - y1 < 4) return null;
+        clipped = { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+      }
+      cur = cur.parentElement;
+    }
+    return clipped;
+  }
+
+  /** Is the top edge (the walking surface) hidden behind something else? */
+  private occluded(el: Element, box: Box): boolean {
+    const y = box.y + 2;
+    if (y < 0 || y > window.innerHeight) return false; // off screen: trust it
+    let samples = 0;
+    let related = 0;
+    for (const fx of [0.2, 0.5, 0.8]) {
+      const x = box.x + box.w * fx;
+      if (x < 0 || x > window.innerWidth) continue;
+      samples++;
+      const hit = document.elementFromPoint(x, y);
+      if (hit && (hit === el || el.contains(hit) || hit.contains(el))) related++;
+    }
+    return samples > 0 && related === 0;
+  }
+
   scan(): void {
     if (!document.body) return;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
+    const sx = window.scrollX;
+    const sy = window.scrollY;
+    this.backdropCache.clear();
+    this.gluedCache.clear();
+
     const found: Surface[] = [];
     const accepted: Element[] = [];
 
     const candidates = document.body.querySelectorAll<HTMLElement>("*");
-    for (const el of candidates) {
-      if (found.length >= MAX_SURFACES) break;
-      const tag = el.tagName;
+    const limit = Math.min(candidates.length, MAX_EXAMINED);
+    for (let i = 0; i < limit && found.length < MAX_COLLECTED; i++) {
+      const el = candidates[i];
+      const tag = el.tagName.toUpperCase();
+      if (NEVER_SOLID.has(tag)) continue;
       const hint = el.getAttribute("data-webpenguins");
       if (hint === "ignore") continue;
-      const always = hint === "solid" || ALWAYS_SOLID.has(tag);
-      if (!always && !MAYBE_SOLID.has(tag)) continue;
-      if (el.closest('[data-webpenguins="ignore"]')) continue;
-
-      // Windows don't nest: skip descendants of accepted surfaces.
-      if (accepted.some((a) => a.contains(el))) continue;
 
       const rect = el.getBoundingClientRect();
-      if (rect.width < MIN_WIDTH || rect.height < MIN_HEIGHT) continue;
+      if (rect.width < MIN_WIDTH || rect.height < (tag === "HR" ? 1 : MIN_HEIGHT)) continue;
       // Skip page-wrapper sized boxes; penguins should walk on things,
       // not be walled in by the layout.
       if (rect.width > vw * 0.98 && rect.height > vh * 0.85) continue;
       if (rect.height > vh * 1.5) continue;
 
-      const style = getComputedStyle(el);
-      if (style.visibility === "hidden" || style.display === "none") continue;
-      if (parseFloat(style.opacity) < 0.15) continue;
-      // Fixed/sticky elements are glued to the viewport, not the page — in a
-      // document-space world they would bulldoze toons on every scroll.
-      if (style.position === "fixed" || style.position === "sticky") continue;
-      if (!always && !looksLikeCard(style)) continue;
+      if (el.closest('[data-webpenguins="ignore"]')) continue;
+      // Windows don't nest: skip descendants of accepted surfaces.
+      if (accepted.some((a) => a.contains(el))) continue;
+
+      // Visibility, including ancestor display/visibility/opacity.
+      const cv = (
+        el as HTMLElement & { checkVisibility?: (o: object) => boolean }
+      ).checkVisibility;
+      if (cv) {
+        if (!cv.call(el, { checkOpacity: true, checkVisibilityCSS: true })) continue;
+      }
+      const st = getComputedStyle(el);
+      if (!cv) {
+        if (st.visibility === "hidden" || st.display === "none") continue;
+        if (parseFloat(st.opacity) < 0.15) continue;
+      }
+
+      let box: Box = { x: rect.left, y: rect.top, w: rect.width, h: rect.height };
+      let solid = hint === "solid" || this.paints(el, st);
+
+      // Bare headings: collide with the text's ink box, not the layout box.
+      if (!solid && HEADINGS.has(tag)) {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const ink = range.getBoundingClientRect();
+        if (ink.width >= MIN_WIDTH && ink.height >= 8) {
+          box = { x: ink.left, y: ink.top, w: ink.width, h: ink.height };
+          solid = true;
+        }
+      }
+      if (!solid) continue;
+
+      // Fixed/sticky elements (or children of them) are glued to the
+      // viewport, not the page — they would bulldoze toons on every scroll.
+      if (this.viewportGlued(el)) continue;
+
+      const clipped = this.clipByAncestors(el, box);
+      if (!clipped) continue;
+      box = clipped;
+
+      // Big rounded corners: stand on the flat part, not the phantom corner.
+      const radius = Math.max(
+        parseFloat(st.borderTopLeftRadius) || 0,
+        parseFloat(st.borderTopRightRadius) || 0
+      );
+      if (radius > 8) {
+        const inset = Math.min(radius, box.w / 4);
+        box = { x: box.x + inset, y: box.y, w: box.w - 2 * inset, h: box.h };
+      }
+      if (box.w < MIN_WIDTH) continue;
+
+      if (this.occluded(el, box)) continue;
 
       accepted.push(el);
       found.push({
         id: idFor(el),
         el,
-        x: rect.left + window.scrollX,
-        y: rect.top + window.scrollY,
-        w: rect.width,
-        h: rect.height,
+        x: box.x + sx,
+        y: box.y + sy,
+        w: box.w,
+        h: box.h,
       });
+    }
+
+    // Keep the surfaces nearest the viewport (long feeds have hundreds).
+    if (found.length > MAX_SURFACES) {
+      const center = sy + vh / 2;
+      found.sort(
+        (a, b) => Math.abs(a.y + a.h / 2 - center) - Math.abs(b.y + b.h / 2 - center)
+      );
+      found.length = MAX_SURFACES;
     }
 
     this.surfaces = found;

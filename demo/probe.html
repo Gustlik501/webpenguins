@@ -17,7 +17,15 @@
 <main>
   <div class="card">Card one — a landing platform for penguins.</div>
   <p>Some text between the platforms so the page has body.</p>
+  <!-- ghost: no background, border, or shadow → must NOT be solid -->
+  <div id="ghost" style="width:400px;height:60px;margin:20px 0"></div>
+  <!-- bare heading: should collide with its text ink box, not full width -->
+  <h3 id="inkhead" style="margin:20px 0;font-size:28px">Short</h3>
   <div class="img"></div>
+  <!-- overflow-hidden: child sticks out 200px but must be clipped -->
+  <div id="clipper" style="overflow:hidden;height:80px;position:relative;margin:20px 0">
+    <div style="background:#4f9d69;width:300px;height:280px"></div>
+  </div>
   <p>More filler text below the fake image.</p>
   <div class="card" style="height:110px">Card two.</div>
 </main>
