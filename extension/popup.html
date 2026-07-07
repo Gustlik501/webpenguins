@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  body {
+    width: 260px;
+    margin: 0;
+    font: 13px/1.5 system-ui, sans-serif;
+    background: #10315c;
+    color: #eef2f7;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px 8px;
+  }
+  header img { image-rendering: pixelated; width: 32px; height: 32px; }
+  header h1 { font-size: 15px; margin: 0; font-weight: 600; }
+  main { padding: 0 14px 12px; }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    gap: 8px;
+  }
+  .row label { flex: 1; }
+  input[type="range"] { width: 110px; }
+  select, input[type="number"] {
+    background: #1c4e89;
+    color: #fff;
+    border: 1px solid #3a6ea5;
+    border-radius: 4px;
+    padding: 2px 4px;
+    width: 90px;
+  }
+  input[type="number"] { width: 52px; }
+  .count { min-width: 20px; text-align: right; font-variant-numeric: tabular-nums; }
+  hr { border: 0; border-top: 1px solid #2a5688; margin: 8px 0; }
+  button {
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px;
+    border: 0;
+    border-radius: 6px;
+    background: #d9534f;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:hover { background: #c9302c; }
+  button.secondary { background: #2a5688; margin-top: 6px; }
+  button.secondary:hover { background: #34689f; }
+  footer { padding: 0 14px 12px; opacity: .65; font-size: 11px; }
+  a { color: #9cc3ee; }
+</style>
+</head>
+<body>
+<header>
+  <img src="icons/icon32.png" alt="">
+  <h1>Web Penguins</h1>
+</header>
+<main>
+  <div class="row">
+    <label for="enabled"><strong>Penguins everywhere</strong></label>
+    <input type="checkbox" id="enabled">
+  </div>
+  <div class="row">
+    <label for="site"><span id="siteLabel">On this site</span></label>
+    <input type="checkbox" id="site">
+  </div>
+  <hr>
+  <div class="row">
+    <label for="penguins">Penguins</label>
+    <input type="range" id="penguins" min="0" max="40" step="1">
+    <span class="count" id="penguinsCount">8</span>
+  </div>
+  <div class="row">
+    <label for="snow">Snow</label>
+    <input type="checkbox" id="snow">
+  </div>
+  <div class="row">
+    <label for="santa">Santa</label>
+    <select id="santa">
+      <option value="off">off</option>
+      <option value="regular">regular</option>
+      <option value="medium">medium</option>
+      <option value="big">big</option>
+    </select>
+  </div>
+  <div class="row">
+    <label for="trees">Trees</label>
+    <input type="number" id="trees" min="0" max="12" step="1">
+  </div>
+  <div class="row">
+    <label for="blood">Splats &amp; zaps (blood)</label>
+    <input type="checkbox" id="blood">
+  </div>
+  <div class="row">
+    <label for="zap">Click to zap</label>
+    <input type="checkbox" id="zap">
+  </div>
+  <button id="bomb">💣 Bomb them all</button>
+</main>
+<footer>
+  xpenguins (1999) &amp; xsnow (1984) reborn. Settings apply to open tabs instantly.
+</footer>
+<script src="popup.js"></script>
+</body>
+</html>

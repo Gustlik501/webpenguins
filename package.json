@@ -1,0 +1,19 @@
+{
+  "name": "web-penguins",
+  "version": "0.1.0",
+  "description": "xpenguins + xsnow remade for the web: penguins walk on your DOM, snow settles on your elements. Original 1999-2001 assets.",
+  "type": "module",
+  "license": "GPL-3.0-or-later",
+  "scripts": {
+    "assets": "node tools/build-assets.mjs",
+    "build": "node tools/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node tools/test-run.mjs",
+    "test:ext": "node tools/test-extension.mjs",
+    "test:stop": "node tools/test-stop.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5.6.0"
+  }
+}

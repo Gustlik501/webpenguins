@@ -1,0 +1,398 @@
+{
+  "delay": 60,
+  "genera": [
+    {
+      "name": "normal",
+      "number": 5,
+      "anims": {
+        "faller": {
+          "width": 30,
+          "height": 30,
+          "frames": 8,
+          "speed": 3,
+          "directions": 1,
+          "image": "penguins/faller.png"
+        },
+        "walker": {
+          "width": 30,
+          "height": 30,
+          "frames": 8,
+          "speed": 4,
+          "directions": 2,
+          "image": "penguins/walker.png"
+        },
+        "tumbler": {
+          "width": 30,
+          "height": 30,
+          "frames": 8,
+          "speed": 1,
+          "directions": 1,
+          "acceleration": 1,
+          "terminal_velocity": 8,
+          "image": "penguins/tumbler.png"
+        },
+        "climber": {
+          "width": 30,
+          "height": 30,
+          "frames": 8,
+          "speed": 4,
+          "directions": 2,
+          "image": "penguins/climber.png"
+        },
+        "floater": {
+          "width": 30,
+          "height": 30,
+          "frames": 8,
+          "speed": 3,
+          "directions": 1,
+          "image": "penguins/floater.png"
+        },
+        "explosion": {
+          "width": 64,
+          "height": 64,
+          "frames": 1,
+          "speed": 4,
+          "directions": 1,
+          "image": "penguins/explosion.png"
+        },
+        "exit": {
+          "width": 32,
+          "height": 32,
+          "frames": 16,
+          "speed": 4,
+          "directions": 1,
+          "image": "penguins/bomber.png"
+        },
+        "zapped": {
+          "width": 33,
+          "height": 32,
+          "frames": 10,
+          "speed": 4,
+          "directions": 2,
+          "image": "penguins/zapped.png"
+        },
+        "splatted": {
+          "width": 32,
+          "height": 32,
+          "frames": 12,
+          "speed": 4,
+          "directions": 1,
+          "image": "penguins/splat.png"
+        },
+        "angel": {
+          "width": 46,
+          "height": 30,
+          "frames": 4,
+          "speed": 3,
+          "directions": 1,
+          "image": "penguins/angel.png"
+        },
+        "action0": {
+          "width": 30,
+          "height": 30,
+          "frames": 12,
+          "speed": 0,
+          "directions": 1,
+          "loop": -4,
+          "image": "penguins/reader.png"
+        }
+      }
+    },
+    {
+      "name": "skateboarder",
+      "number": 3,
+      "anims": {
+        "walker": {
+          "width": 30,
+          "height": 30,
+          "frames": 1,
+          "speed": 4,
+          "directions": 2,
+          "acceleration": 1,
+          "terminal_velocity": 12,
+          "image": "penguins/skateboarder.png"
+        },
+        "faller": {
+          "width": 30,
+          "height": 62,
+          "frames": 8,
+          "speed": 2,
+          "directions": 1,
+          "image": "penguins/ballooner.png"
+        },
+        "tumbler": {
+          "width": 30,
+          "height": 30,
+          "frames": 8,
+          "speed": 1,
+          "directions": 1,
+          "acceleration": 1,
+          "terminal_velocity": 8,
+          "image": "penguins/tumbler.png"
+        },
+        "climber": {
+          "width": 30,
+          "height": 30,
+          "frames": 1,
+          "speed": 4,
+          "directions": 2,
+          "acceleration": 1,
+          "terminal_velocity": 12,
+          "image": "penguins/climber_skateboarder.png"
+        },
+        "floater": {
+          "width": 30,
+          "height": 30,
+          "frames": 8,
+          "speed": 8,
+          "directions": 2,
+          "image": "penguins/superpenguin.png"
+        },
+        "exit": {
+          "width": 32,
+          "height": 32,
+          "frames": 9,
+          "speed": 4,
+          "directions": 2,
+          "image": "penguins/exit.png"
+        },
+        "explosion": {
+          "width": 64,
+          "height": 64,
+          "frames": 1,
+          "speed": 4,
+          "directions": 1,
+          "image": "penguins/explosion.png"
+        },
+        "zapped": {
+          "width": 33,
+          "height": 32,
+          "frames": 10,
+          "speed": 4,
+          "directions": 2,
+          "image": "penguins/zapped.png"
+        },
+        "angel": {
+          "width": 46,
+          "height": 30,
+          "frames": 4,
+          "speed": 3,
+          "directions": 1,
+          "image": "penguins/angel.png"
+        },
+        "splatted": {
+          "width": 32,
+          "height": 32,
+          "frames": 12,
+          "speed": 4,
+          "directions": 1,
+          "image": "penguins/splat.png"
+        },
+        "action0": {
+          "width": 32,
+          "height": 32,
+          "frames": 14,
+          "speed": 0,
+          "directions": 1,
+          "loop": -6,
+          "image": "penguins/digger.png"
+        }
+      }
+    }
+  ],
+  "snow": {
+    "flakes": [
+      {
+        "image": "snow/flake0.png",
+        "width": 3,
+        "height": 3
+      },
+      {
+        "image": "snow/flake1.png",
+        "width": 8,
+        "height": 8
+      },
+      {
+        "image": "snow/flake2.png",
+        "width": 16,
+        "height": 13
+      },
+      {
+        "image": "snow/flake3.png",
+        "width": 8,
+        "height": 8
+      },
+      {
+        "image": "snow/flake4.png",
+        "width": 8,
+        "height": 8
+      },
+      {
+        "image": "snow/flake5.png",
+        "width": 8,
+        "height": 8
+      },
+      {
+        "image": "snow/flake6.png",
+        "width": 3,
+        "height": 3
+      }
+    ],
+    "santas": [
+      {
+        "name": "regular",
+        "speed": 12,
+        "frames": [
+          {
+            "image": "snow/RegularSanta1.png",
+            "width": 56,
+            "height": 8
+          },
+          {
+            "image": "snow/RegularSanta2.png",
+            "width": 56,
+            "height": 8
+          },
+          {
+            "image": "snow/RegularSanta3.png",
+            "width": 56,
+            "height": 8
+          },
+          {
+            "image": "snow/RegularSanta4.png",
+            "width": 56,
+            "height": 8
+          }
+        ],
+        "rudolf": [
+          {
+            "image": "snow/RegularSantaRudolf1.png",
+            "width": 56,
+            "height": 8
+          },
+          {
+            "image": "snow/RegularSantaRudolf2.png",
+            "width": 56,
+            "height": 8
+          },
+          {
+            "image": "snow/RegularSantaRudolf3.png",
+            "width": 56,
+            "height": 8
+          },
+          {
+            "image": "snow/RegularSantaRudolf4.png",
+            "width": 56,
+            "height": 8
+          }
+        ]
+      },
+      {
+        "name": "medium",
+        "speed": 25,
+        "frames": [
+          {
+            "image": "snow/MediumSanta1.png",
+            "width": 88,
+            "height": 17
+          },
+          {
+            "image": "snow/MediumSanta2.png",
+            "width": 88,
+            "height": 17
+          },
+          {
+            "image": "snow/MediumSanta3.png",
+            "width": 88,
+            "height": 17
+          },
+          {
+            "image": "snow/MediumSanta4.png",
+            "width": 88,
+            "height": 17
+          }
+        ],
+        "rudolf": [
+          {
+            "image": "snow/MediumSantaRudolf1.png",
+            "width": 88,
+            "height": 17
+          },
+          {
+            "image": "snow/MediumSantaRudolf2.png",
+            "width": 88,
+            "height": 17
+          },
+          {
+            "image": "snow/MediumSantaRudolf3.png",
+            "width": 88,
+            "height": 17
+          },
+          {
+            "image": "snow/MediumSantaRudolf4.png",
+            "width": 88,
+            "height": 17
+          }
+        ]
+      },
+      {
+        "name": "big",
+        "speed": 50,
+        "frames": [
+          {
+            "image": "snow/BigSanta1.png",
+            "width": 176,
+            "height": 34
+          },
+          {
+            "image": "snow/BigSanta2.png",
+            "width": 176,
+            "height": 34
+          },
+          {
+            "image": "snow/BigSanta3.png",
+            "width": 176,
+            "height": 34
+          },
+          {
+            "image": "snow/BigSanta4.png",
+            "width": 176,
+            "height": 34
+          }
+        ],
+        "rudolf": [
+          {
+            "image": "snow/BigSantaRudolf1.png",
+            "width": 176,
+            "height": 34
+          },
+          {
+            "image": "snow/BigSantaRudolf2.png",
+            "width": 176,
+            "height": 34
+          },
+          {
+            "image": "snow/BigSantaRudolf3.png",
+            "width": 176,
+            "height": 34
+          },
+          {
+            "image": "snow/BigSantaRudolf4.png",
+            "width": 176,
+            "height": 34
+          }
+        ]
+      }
+    ],
+    "tree": {
+      "image": "snow/tannenbaum.png",
+      "width": 56,
+      "height": 56
+    },
+    "moon": {
+      "image": "snow/moon1.png",
+      "width": 255,
+      "height": 256
+    }
+  }
+}

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>web-penguins demo — xpenguins + xsnow on a blog page</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 18px/1.65 Georgia, "Times New Roman", serif;
+    background: #f4f1ea;
+    color: #2b2b2b;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #191b1f; color: #d8d5cd; }
+    .card, pre, blockquote { background: #23262c !important; border-color: #3a3f47 !important; }
+    header.hero { background: #10315c !important; }
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 0 20px 30vh; }
+  header.hero {
+    background: #1c4e89;
+    color: #fff;
+    padding: 64px 20px 48px;
+    text-align: center;
+  }
+  header.hero h1 { margin: 0 0 8px; font-size: 44px; letter-spacing: 1px; }
+  header.hero p { margin: 0; opacity: .85; font-style: italic; }
+  h2 { margin-top: 2.2em; font-size: 28px; }
+  .card {
+    background: #fffdf7;
+    border: 1px solid #ddd6c4;
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 28px 0;
+    box-shadow: 0 3px 10px rgba(0,0,0,.08);
+  }
+  pre {
+    background: #fffdf7;
+    border: 1px solid #ddd6c4;
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    font: 14px/1.5 ui-monospace, Consolas, monospace;
+  }
+  blockquote {
+    background: #fffdf7;
+    border-left: 5px solid #1c4e89;
+    margin: 28px 0;
+    padding: 14px 20px;
+    font-style: italic;
+  }
+  .fakeimg {
+    height: 220px;
+    border-radius: 10px;
+    margin: 28px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font: 700 22px/1 system-ui, sans-serif;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, #26547c, #4f9d69);
+    box-shadow: 0 3px 10px rgba(0,0,0,.15);
+  }
+  .fakeimg.two { background: linear-gradient(135deg, #7c2648, #9d764f); height: 160px; }
+  .controls {
+    position: fixed;
+    right: 14px;
+    bottom: 14px;
+    z-index: 2147483647;
+    display: flex;
+    gap: 8px;
+    font: 13px system-ui, sans-serif;
+  }
+  .controls button {
+    border: 1px solid #999;
+    border-radius: 6px;
+    background: #fff;
+    padding: 7px 12px;
+    cursor: pointer;
+  }
+  .controls button:hover { background: #eee; }
+  hr { border: 0; border-top: 2px solid #c9c1ab; margin: 40px 0; }
+</style>
+</head>
+<body>
+
+<header class="hero" data-webpenguins="solid">
+  <h1>Penguins in your DOM</h1>
+  <p>remaking xpenguins &amp; xsnow (1999) as a web engine — demo page</p>
+</header>
+
+<main>
+  <p>This page looks like a blog post on purpose: it is the test bench for
+  <strong>web-penguins</strong>. Every box, image, heading and code block you
+  see is detected by the engine as a <em>window</em> — the same concept the
+  1999 originals used on X11 desktops. Penguins parachute in from the top of
+  your screen, land on whatever they land on, and get on with their lives.</p>
+
+  <p>Try things: <strong>click a penguin</strong> (sorry). Scroll gently and
+  they ride the page; flick-scroll and they lose their footing. Let the snow
+  pile up on the cards below, then resize the window to shake it off.</p>
+
+  <div class="card">
+    <strong>This is a card.</strong> Penguins treat it as a solid window: they
+    walk along its top edge, climb its sides, and occasionally sit down up
+    there to read a book. Snow settles on it too.
+  </div>
+
+  <h2>The original behaviour, ported line by line</h2>
+
+  <p>The walking, climbing, tumbling, floating, splatting and exploding all
+  come from <code>xpenguins_core.c</code> — same probabilities, same
+  8-pixel step height, same terminal velocity. The snow physics and Santa are
+  from xsnow. The sprites are the original XPM pixmaps, converted losslessly
+  to PNG.</p>
+
+  <pre data-webpenguins="solid">
+&lt;script src="webpenguins.js" data-auto
+        data-penguins="8" data-trees="3"&gt;&lt;/script&gt;
+
+// or programmatically:
+const flock = WebPenguins.start({ penguins: 8, snow: true });
+await flock.stop();          // the classic bomber exit sequence
+  </pre>
+
+  <div class="fakeimg">HERO IMAGE STAND-IN</div>
+
+  <blockquote>
+    “Fallers drop in from the top of the screen at the start. Walkers trot
+    along the tops of your windows and along the bottom of your screen.”
+    — the original theme config, 5&nbsp;May&nbsp;2001
+  </blockquote>
+
+  <h2>Things penguins can do to your layout</h2>
+
+  <p>Nothing, actually. The whole show is one <code>&lt;canvas&gt;</code>
+  overlay with <code>pointer-events:&nbsp;none</code>; your page never knows
+  it's there. The engine only <em>reads</em> the DOM to find surfaces.</p>
+
+  <div class="fakeimg two">SECOND IMAGE</div>
+
+  <p>Long paragraphs are deliberately boring so that the boxes stand out.
+  The engine ignores plain text: penguins won't balance on a comma. They will
+  however happily walk on headings, tables, buttons and anything that looks
+  like a card — border, shadow, or its own background.</p>
+
+  <hr>
+
+  <p>Scroll further for more platforms, or just watch the bottom of the
+  screen: it's the desktop floor, snow drifts and all. There should be a
+  tannenbaum or three down there.</p>
+
+  <div class="card" style="height:120px">One last ledge before the floor.</div>
+</main>
+
+<div class="controls" data-webpenguins="ignore">
+  <button onclick="flock.setPenguins((window._n=(window._n||8)+4))">+4 penguins</button>
+  <button onclick="flock.stop()">💣 bomb them</button>
+  <button onclick="window.flock=WebPenguins.start({penguins:8,trees:3})">restart</button>
+</div>
+
+<script src="../dist/webpenguins.js"></script>
+<script>
+  window.flock = WebPenguins.start({ penguins: 8, trees: 3 });
+</script>
+
+</body>
+</html>

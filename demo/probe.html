@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<!-- Dev-only probe: loads the demo layout, runs the engine with the debug
+     hook, and serialises world state into <title> so headless dumps can
+     verify behaviour. Not part of the deliverable. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>probe</title>
+<style>
+  body { margin: 0; font: 18px/1.6 Georgia, serif; background: #191b1f; color: #ddd; }
+  main { max-width: 720px; margin: 0 auto; padding: 260px 20px 40vh; }
+  .card { background: #23262c; border: 1px solid #3a3f47; border-radius: 10px; padding: 20px; margin: 30px 0; }
+  .img { height: 200px; background: linear-gradient(135deg, #26547c, #4f9d69); border-radius: 10px; margin: 30px 0; }
+</style>
+</head>
+<body>
+<main>
+  <div class="card">Card one — a landing platform for penguins.</div>
+  <p>Some text between the platforms so the page has body.</p>
+  <div class="img"></div>
+  <p>More filler text below the fake image.</p>
+  <div class="card" style="height:110px">Card two.</div>
+</main>
+<pre id="out">no-script</pre>
+<script src="../dist/webpenguins.js"></script>
+<script>
+  var out = document.getElementById("out");
+  out.textContent = "script-ran";
+  window.onerror = function (msg, src, line) {
+    out.textContent += " | ERROR " + msg + " @" + line;
+  };
+  window.flock = WebPenguins.start({ penguins: 6, trees: 2, debug: true });
+  var t0 = performance.now();
+  (function poll() {
+    var d = window.__webpenguins;
+    if (d && d.manager) {
+      var m = d.manager;
+      var toons = m.toons.slice(0, m.penguinNumber).map(function (p) {
+        return [p.type, Math.round(p.x), Math.round(p.y), p.active ? 1 : 0].join(":");
+      });
+      var rects = d.world.rects.map(function (r) {
+        return [r.x, r.y, r.w, r.h].join(",");
+      });
+      out.textContent =
+        "T" + Math.round(performance.now() - t0) +
+        " loops:" + d.engine.loopCount + " ticks:" + d.engine.tickCount +
+        " err:" + (d.engine.lastError || "none") +
+        " | toons " + toons.join(" ") +
+        " | rects " + rects.join(" ");
+    } else {
+      out.textContent = "T" + Math.round(performance.now() - t0) + " | no-debug-hook";
+    }
+    requestAnimationFrame(poll);
+  })();
+</script>
+</body>
+</html>
