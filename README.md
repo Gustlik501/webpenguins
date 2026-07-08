@@ -26,7 +26,7 @@ With options:
 
 ```html
 <script src="webpenguins.js" data-auto
-        data-penguins="10" data-trees="3" data-santa="big"></script>
+        data-penguins="10" data-trees="3" data-theme="Turtles"></script>
 ```
 
 Or programmatically (also available as an ES module, `webpenguins.esm.js`):
@@ -43,6 +43,7 @@ await flock.stop();          // the classic exit: everyone lights a bomb 💣
 | option                 | default    | what it does |
 | ---------------------- | ---------- | ------------ |
 | `penguins`             | `25`       | flock size, up to 80 |
+| `theme`                | `"Penguins"` | any original theme: `"Penguins"`, `"Big Penguins"`, `"Classic Penguins"`, `"Turtles"`, `"Bill"` — or a list to mix them, like `xpenguins -t a -t b` |
 | `snow`                 | `true`     | `false`, `true`, or a flake count |
 | `santa`                | `"big"`    | `false`, `"regular"`, `"medium"`, `"big"` (original xsnow sizes & speeds) |
 | `rudolf`               | `true`     | Rudolf leads the sled |
@@ -69,8 +70,8 @@ gate in the surface scanner for that element.
 `extension/` is a Manifest V3 extension (Chrome, Edge, Firefox ≥ 121). Load it
 via `chrome://extensions` → *Developer mode* → *Load unpacked* (or
 `about:debugging` → *Load Temporary Add-on* in Firefox). The popup has flock
-size, snow/Santa/trees toggles, per-site disable, and a *Bomb them all*
-button. Settings sync via `storage.sync` and apply to open tabs instantly —
+size, a theme picker, snow/Santa/trees toggles, per-site disable, and a
+*Bomb them all* button. Settings sync via `storage.sync` and apply to open tabs instantly —
 no background worker, no messaging, no page-visible globals.
 
 ## How it works
@@ -139,7 +140,10 @@ no background worker, no messaging, no page-visible globals.
 - **`tools/xpm.mjs` + `tools/png.mjs` + `tools/theme.mjs`** — a dependency-free
   XPM3 parser, PNG encoder and xpenguins theme-config parser. They convert the
   original assets losslessly and read the animation metadata (frame counts,
-  speeds, terminal velocities) straight from the 2001 theme file.
+  speeds, terminal velocities) straight from the 2001 theme files — all five
+  themes that shipped with xpenguins 2.2: *Penguins*, *Big Penguins*,
+  *Classic Penguins*, *Turtles* and *Bill* (who ambles at his own stately
+  150ms tick, exactly as configured in 2001).
 
 ## Building
 
@@ -161,8 +165,9 @@ tar -C vendor -xzf xpenguins_2.2.orig.tar.gz && tar -C vendor -xzf xsnow_3.9.3.o
 
 ## Provenance & license
 
-- **xpenguins 2.2** © 1999–2001 Robin Hogan — GPL-2+. The default *Penguins*
-  theme sprites (walker, climber, floater, bomber, angel, reader, the
+- **xpenguins 2.2** © 1999–2001 Robin Hogan — GPL-2+. All five original
+  themes (*Penguins*, *Big Penguins*, *Classic Penguins*, *Turtles*, *Bill*)
+  with their sprites (walker, climber, floater, bomber, angel, reader, the
   skateboarder crew…) and the entire behaviour model.
 - **xsnow** © Rick Jansen (1984–2001), continued by Willem Vermin — GPL-3.
   Flakes, Santa (all sizes, with/without Rudolf), tannenbaum, moon.

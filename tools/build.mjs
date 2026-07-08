@@ -43,7 +43,7 @@ if (fs.existsSync(extDir)) {
 
   // Decode the walker PNG (our own encoder output: single IDAT, filter 0)
   // and cut out one frame to scale into extension icons.
-  const png = fs.readFileSync(path.join(root, "assets", "penguins", "walker.png"));
+  const png = fs.readFileSync(path.join(root, "assets", "penguins", "Penguins", "walker.png"));
   const width = png.readUInt32BE(16);
   const height = png.readUInt32BE(20);
   let off = 8;

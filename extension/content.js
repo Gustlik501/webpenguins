@@ -6,6 +6,7 @@
   var DEFAULTS = {
     enabled: true,
     penguins: 25,
+    theme: "Penguins",
     snow: true,
     santa: "big",
     trees: 0,
@@ -42,6 +43,7 @@
       if (flock) flock.destroy();
       flock = WebPenguins.start({
         penguins: Number(s.penguins),
+        theme: s.theme,
         snow: !!s.snow,
         santa: s.santa === "off" ? false : s.santa,
         trees: Number(s.trees) || 0,

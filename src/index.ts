@@ -55,6 +55,10 @@ function parseDatasetOptions(d: DOMStringMap): WebPenguinsOptions {
   const opts: WebPenguinsOptions = {};
   const bool = (v: string | undefined) => v !== "false" && v !== "0";
   if (d.penguins !== undefined) opts.penguins = Number(d.penguins);
+  if (d.theme !== undefined) {
+    const themes = d.theme.split(",").map((t) => t.trim()).filter(Boolean);
+    if (themes.length) opts.theme = themes.length === 1 ? themes[0] : themes;
+  }
   if (d.snow !== undefined) {
     opts.snow = d.snow === "" || d.snow === "true" ? true : d.snow === "false" ? false : Number(d.snow);
   }

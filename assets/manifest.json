@@ -1,205 +1,628 @@
 {
-  "delay": 60,
-  "genera": [
-    {
-      "name": "normal",
-      "number": 5,
-      "anims": {
-        "faller": {
-          "width": 30,
-          "height": 30,
-          "frames": 8,
-          "speed": 3,
-          "directions": 1,
-          "image": "penguins/faller.png"
+  "themes": {
+    "Big Penguins": {
+      "delay": 60,
+      "genera": [
+        {
+          "name": "normal",
+          "number": 5,
+          "anims": {
+            "faller": {
+              "width": 45,
+              "height": 45,
+              "frames": 8,
+              "speed": 5,
+              "directions": 1,
+              "image": "penguins/Big_Penguins/faller.png"
+            },
+            "walker": {
+              "width": 45,
+              "height": 45,
+              "frames": 8,
+              "speed": 6,
+              "directions": 2,
+              "image": "penguins/Big_Penguins/walker.png"
+            },
+            "tumbler": {
+              "width": 45,
+              "height": 45,
+              "frames": 8,
+              "speed": 1,
+              "directions": 1,
+              "acceleration": 1,
+              "terminal_velocity": 12,
+              "image": "penguins/Big_Penguins/tumbler.png"
+            },
+            "climber": {
+              "width": 45,
+              "height": 45,
+              "frames": 8,
+              "speed": 6,
+              "directions": 2,
+              "image": "penguins/Big_Penguins/climber.png"
+            },
+            "floater": {
+              "width": 45,
+              "height": 45,
+              "frames": 8,
+              "speed": 5,
+              "directions": 1,
+              "image": "penguins/Big_Penguins/floater.png"
+            },
+            "explosion": {
+              "width": 96,
+              "height": 96,
+              "frames": 1,
+              "speed": 6,
+              "directions": 1,
+              "image": "penguins/Big_Penguins/explosion.png"
+            },
+            "exit": {
+              "width": 48,
+              "height": 48,
+              "frames": 16,
+              "speed": 6,
+              "directions": 1,
+              "image": "penguins/Big_Penguins/bomber.png"
+            },
+            "zapped": {
+              "width": 49,
+              "height": 48,
+              "frames": 10,
+              "speed": 6,
+              "directions": 2,
+              "image": "penguins/Big_Penguins/zapped.png"
+            },
+            "splatted": {
+              "width": 48,
+              "height": 48,
+              "frames": 12,
+              "speed": 6,
+              "directions": 1,
+              "image": "penguins/Big_Penguins/splat.png"
+            },
+            "angel": {
+              "width": 69,
+              "height": 45,
+              "frames": 4,
+              "speed": 5,
+              "directions": 1,
+              "image": "penguins/Big_Penguins/angel.png"
+            },
+            "action0": {
+              "width": 45,
+              "height": 45,
+              "frames": 12,
+              "speed": 0,
+              "directions": 1,
+              "loop": -4,
+              "image": "penguins/Big_Penguins/reader.png"
+            }
+          }
         },
-        "walker": {
-          "width": 30,
-          "height": 30,
-          "frames": 8,
-          "speed": 4,
-          "directions": 2,
-          "image": "penguins/walker.png"
-        },
-        "tumbler": {
-          "width": 30,
-          "height": 30,
-          "frames": 8,
-          "speed": 1,
-          "directions": 1,
-          "acceleration": 1,
-          "terminal_velocity": 8,
-          "image": "penguins/tumbler.png"
-        },
-        "climber": {
-          "width": 30,
-          "height": 30,
-          "frames": 8,
-          "speed": 4,
-          "directions": 2,
-          "image": "penguins/climber.png"
-        },
-        "floater": {
-          "width": 30,
-          "height": 30,
-          "frames": 8,
-          "speed": 3,
-          "directions": 1,
-          "image": "penguins/floater.png"
-        },
-        "explosion": {
-          "width": 64,
-          "height": 64,
-          "frames": 1,
-          "speed": 4,
-          "directions": 1,
-          "image": "penguins/explosion.png"
-        },
-        "exit": {
-          "width": 32,
-          "height": 32,
-          "frames": 16,
-          "speed": 4,
-          "directions": 1,
-          "image": "penguins/bomber.png"
-        },
-        "zapped": {
-          "width": 33,
-          "height": 32,
-          "frames": 10,
-          "speed": 4,
-          "directions": 2,
-          "image": "penguins/zapped.png"
-        },
-        "splatted": {
-          "width": 32,
-          "height": 32,
-          "frames": 12,
-          "speed": 4,
-          "directions": 1,
-          "image": "penguins/splat.png"
-        },
-        "angel": {
-          "width": 46,
-          "height": 30,
-          "frames": 4,
-          "speed": 3,
-          "directions": 1,
-          "image": "penguins/angel.png"
-        },
-        "action0": {
-          "width": 30,
-          "height": 30,
-          "frames": 12,
-          "speed": 0,
-          "directions": 1,
-          "loop": -4,
-          "image": "penguins/reader.png"
+        {
+          "name": "skateboarder",
+          "number": 3,
+          "anims": {
+            "walker": {
+              "width": 45,
+              "height": 45,
+              "frames": 1,
+              "speed": 6,
+              "directions": 2,
+              "acceleration": 1,
+              "terminal_velocity": 12,
+              "image": "penguins/Big_Penguins/skateboarder.png"
+            },
+            "faller": {
+              "width": 45,
+              "height": 93,
+              "frames": 8,
+              "speed": 3,
+              "directions": 1,
+              "image": "penguins/Big_Penguins/ballooner.png"
+            },
+            "tumbler": {
+              "width": 45,
+              "height": 45,
+              "frames": 8,
+              "speed": 1,
+              "directions": 1,
+              "acceleration": 1,
+              "terminal_velocity": 12,
+              "image": "penguins/Big_Penguins/tumbler.png"
+            },
+            "climber": {
+              "width": 45,
+              "height": 45,
+              "frames": 1,
+              "speed": 6,
+              "directions": 2,
+              "acceleration": 1,
+              "terminal_velocity": 12,
+              "image": "penguins/Big_Penguins/climber_skateboarder.png"
+            },
+            "floater": {
+              "width": 45,
+              "height": 45,
+              "frames": 8,
+              "speed": 12,
+              "directions": 2,
+              "image": "penguins/Big_Penguins/superpenguin.png"
+            },
+            "exit": {
+              "width": 48,
+              "height": 48,
+              "frames": 9,
+              "speed": 6,
+              "directions": 2,
+              "image": "penguins/Big_Penguins/exit.png"
+            },
+            "explosion": {
+              "width": 96,
+              "height": 96,
+              "frames": 1,
+              "speed": 6,
+              "directions": 1,
+              "image": "penguins/Big_Penguins/explosion.png"
+            },
+            "zapped": {
+              "width": 49,
+              "height": 48,
+              "frames": 10,
+              "speed": 6,
+              "directions": 2,
+              "image": "penguins/Big_Penguins/zapped.png"
+            },
+            "angel": {
+              "width": 69,
+              "height": 45,
+              "frames": 4,
+              "speed": 5,
+              "directions": 1,
+              "image": "penguins/Big_Penguins/angel.png"
+            },
+            "splatted": {
+              "width": 48,
+              "height": 48,
+              "frames": 12,
+              "speed": 6,
+              "directions": 1,
+              "image": "penguins/Big_Penguins/splat.png"
+            },
+            "action0": {
+              "width": 48,
+              "height": 48,
+              "frames": 14,
+              "speed": 0,
+              "directions": 1,
+              "loop": -6,
+              "image": "penguins/Big_Penguins/digger.png"
+            }
+          }
         }
-      }
+      ]
     },
-    {
-      "name": "skateboarder",
-      "number": 3,
-      "anims": {
-        "walker": {
-          "width": 30,
-          "height": 30,
-          "frames": 1,
-          "speed": 4,
-          "directions": 2,
-          "acceleration": 1,
-          "terminal_velocity": 12,
-          "image": "penguins/skateboarder.png"
-        },
-        "faller": {
-          "width": 30,
-          "height": 62,
-          "frames": 8,
-          "speed": 2,
-          "directions": 1,
-          "image": "penguins/ballooner.png"
-        },
-        "tumbler": {
-          "width": 30,
-          "height": 30,
-          "frames": 8,
-          "speed": 1,
-          "directions": 1,
-          "acceleration": 1,
-          "terminal_velocity": 8,
-          "image": "penguins/tumbler.png"
-        },
-        "climber": {
-          "width": 30,
-          "height": 30,
-          "frames": 1,
-          "speed": 4,
-          "directions": 2,
-          "acceleration": 1,
-          "terminal_velocity": 12,
-          "image": "penguins/climber_skateboarder.png"
-        },
-        "floater": {
-          "width": 30,
-          "height": 30,
-          "frames": 8,
-          "speed": 8,
-          "directions": 2,
-          "image": "penguins/superpenguin.png"
-        },
-        "exit": {
-          "width": 32,
-          "height": 32,
-          "frames": 9,
-          "speed": 4,
-          "directions": 2,
-          "image": "penguins/exit.png"
-        },
-        "explosion": {
-          "width": 64,
-          "height": 64,
-          "frames": 1,
-          "speed": 4,
-          "directions": 1,
-          "image": "penguins/explosion.png"
-        },
-        "zapped": {
-          "width": 33,
-          "height": 32,
-          "frames": 10,
-          "speed": 4,
-          "directions": 2,
-          "image": "penguins/zapped.png"
-        },
-        "angel": {
-          "width": 46,
-          "height": 30,
-          "frames": 4,
-          "speed": 3,
-          "directions": 1,
-          "image": "penguins/angel.png"
-        },
-        "splatted": {
-          "width": 32,
-          "height": 32,
-          "frames": 12,
-          "speed": 4,
-          "directions": 1,
-          "image": "penguins/splat.png"
-        },
-        "action0": {
-          "width": 32,
-          "height": 32,
-          "frames": 14,
-          "speed": 0,
-          "directions": 1,
-          "loop": -6,
-          "image": "penguins/digger.png"
+    "Bill": {
+      "delay": 150,
+      "genera": [
+        {
+          "name": "Bill",
+          "number": 1,
+          "anims": {
+            "walker": {
+              "width": 24,
+              "height": 38,
+              "frames": 4,
+              "speed": 4,
+              "directions": 2,
+              "image": "penguins/Bill/walker.png"
+            },
+            "zapped": {
+              "width": 24,
+              "height": 38,
+              "frames": 5,
+              "speed": 4,
+              "directions": 2,
+              "image": "penguins/Bill/splat.png"
+            },
+            "explosion": {
+              "width": 64,
+              "height": 64,
+              "frames": 1,
+              "speed": 4,
+              "directions": 1,
+              "image": "penguins/Bill/explosion.png"
+            },
+            "runner": {
+              "width": 28,
+              "height": 48,
+              "frames": 4,
+              "speed": 4,
+              "directions": 2,
+              "image": "penguins/Bill/carrier.png"
+            },
+            "faller": {
+              "width": 24,
+              "height": 38,
+              "frames": 2,
+              "speed": 4,
+              "directions": 2,
+              "terminal_velocity": 8,
+              "acceleration": 1,
+              "image": "penguins/Bill/faller.png"
+            },
+            "climber": {
+              "width": 38,
+              "height": 24,
+              "frames": 4,
+              "speed": 4,
+              "directions": 2,
+              "image": "penguins/Bill/climber.png"
+            },
+            "squashed": {
+              "width": 24,
+              "height": 38,
+              "frames": 5,
+              "speed": 4,
+              "directions": 2,
+              "image": "penguins/Bill/splat.png"
+            },
+            "action0": {
+              "width": 53,
+              "height": 45,
+              "frames": 23,
+              "speed": 0,
+              "directions": 1,
+              "loop": 1,
+              "image": "penguins/Bill/hacker.png"
+            }
+          }
         }
-      }
+      ]
+    },
+    "Classic Penguins": {
+      "delay": 60,
+      "genera": [
+        {
+          "name": "Classic Penguins",
+          "number": 8,
+          "anims": {
+            "walker": {
+              "width": 30,
+              "height": 30,
+              "frames": 8,
+              "speed": 4,
+              "directions": 2,
+              "image": "penguins/Classic_Penguins/walker.png"
+            },
+            "faller": {
+              "width": 30,
+              "height": 30,
+              "frames": 8,
+              "speed": 3,
+              "directions": 1,
+              "image": "penguins/Classic_Penguins/faller.png"
+            },
+            "tumbler": {
+              "width": 30,
+              "height": 30,
+              "frames": 8,
+              "speed": 1,
+              "directions": 1,
+              "acceleration": 1,
+              "terminal_velocity": 8,
+              "image": "penguins/Classic_Penguins/tumbler.png"
+            },
+            "climber": {
+              "width": 30,
+              "height": 30,
+              "frames": 8,
+              "speed": 4,
+              "directions": 2,
+              "image": "penguins/Classic_Penguins/climber.png"
+            },
+            "floater": {
+              "width": 30,
+              "height": 30,
+              "frames": 8,
+              "speed": 4,
+              "directions": 1,
+              "image": "penguins/Classic_Penguins/floater.png"
+            },
+            "exit": {
+              "width": 32,
+              "height": 32,
+              "frames": 16,
+              "speed": 4,
+              "directions": 1,
+              "image": "penguins/Classic_Penguins/bomber.png"
+            },
+            "explosion": {
+              "width": 64,
+              "height": 64,
+              "frames": 1,
+              "speed": 4,
+              "directions": 1,
+              "image": "penguins/Classic_Penguins/explosion.png"
+            }
+          }
+        }
+      ]
+    },
+    "Penguins": {
+      "delay": 60,
+      "genera": [
+        {
+          "name": "normal",
+          "number": 5,
+          "anims": {
+            "faller": {
+              "width": 30,
+              "height": 30,
+              "frames": 8,
+              "speed": 3,
+              "directions": 1,
+              "image": "penguins/Penguins/faller.png"
+            },
+            "walker": {
+              "width": 30,
+              "height": 30,
+              "frames": 8,
+              "speed": 4,
+              "directions": 2,
+              "image": "penguins/Penguins/walker.png"
+            },
+            "tumbler": {
+              "width": 30,
+              "height": 30,
+              "frames": 8,
+              "speed": 1,
+              "directions": 1,
+              "acceleration": 1,
+              "terminal_velocity": 8,
+              "image": "penguins/Penguins/tumbler.png"
+            },
+            "climber": {
+              "width": 30,
+              "height": 30,
+              "frames": 8,
+              "speed": 4,
+              "directions": 2,
+              "image": "penguins/Penguins/climber.png"
+            },
+            "floater": {
+              "width": 30,
+              "height": 30,
+              "frames": 8,
+              "speed": 3,
+              "directions": 1,
+              "image": "penguins/Penguins/floater.png"
+            },
+            "explosion": {
+              "width": 64,
+              "height": 64,
+              "frames": 1,
+              "speed": 4,
+              "directions": 1,
+              "image": "penguins/Penguins/explosion.png"
+            },
+            "exit": {
+              "width": 32,
+              "height": 32,
+              "frames": 16,
+              "speed": 4,
+              "directions": 1,
+              "image": "penguins/Penguins/bomber.png"
+            },
+            "zapped": {
+              "width": 33,
+              "height": 32,
+              "frames": 10,
+              "speed": 4,
+              "directions": 2,
+              "image": "penguins/Penguins/zapped.png"
+            },
+            "splatted": {
+              "width": 32,
+              "height": 32,
+              "frames": 12,
+              "speed": 4,
+              "directions": 1,
+              "image": "penguins/Penguins/splat.png"
+            },
+            "angel": {
+              "width": 46,
+              "height": 30,
+              "frames": 4,
+              "speed": 3,
+              "directions": 1,
+              "image": "penguins/Penguins/angel.png"
+            },
+            "action0": {
+              "width": 30,
+              "height": 30,
+              "frames": 12,
+              "speed": 0,
+              "directions": 1,
+              "loop": -4,
+              "image": "penguins/Penguins/reader.png"
+            }
+          }
+        },
+        {
+          "name": "skateboarder",
+          "number": 3,
+          "anims": {
+            "walker": {
+              "width": 30,
+              "height": 30,
+              "frames": 1,
+              "speed": 4,
+              "directions": 2,
+              "acceleration": 1,
+              "terminal_velocity": 12,
+              "image": "penguins/Penguins/skateboarder.png"
+            },
+            "faller": {
+              "width": 30,
+              "height": 62,
+              "frames": 8,
+              "speed": 2,
+              "directions": 1,
+              "image": "penguins/Penguins/ballooner.png"
+            },
+            "tumbler": {
+              "width": 30,
+              "height": 30,
+              "frames": 8,
+              "speed": 1,
+              "directions": 1,
+              "acceleration": 1,
+              "terminal_velocity": 8,
+              "image": "penguins/Penguins/tumbler.png"
+            },
+            "climber": {
+              "width": 30,
+              "height": 30,
+              "frames": 1,
+              "speed": 4,
+              "directions": 2,
+              "acceleration": 1,
+              "terminal_velocity": 12,
+              "image": "penguins/Penguins/climber_skateboarder.png"
+            },
+            "floater": {
+              "width": 30,
+              "height": 30,
+              "frames": 8,
+              "speed": 8,
+              "directions": 2,
+              "image": "penguins/Penguins/superpenguin.png"
+            },
+            "exit": {
+              "width": 32,
+              "height": 32,
+              "frames": 9,
+              "speed": 4,
+              "directions": 2,
+              "image": "penguins/Penguins/exit.png"
+            },
+            "explosion": {
+              "width": 64,
+              "height": 64,
+              "frames": 1,
+              "speed": 4,
+              "directions": 1,
+              "image": "penguins/Penguins/explosion.png"
+            },
+            "zapped": {
+              "width": 33,
+              "height": 32,
+              "frames": 10,
+              "speed": 4,
+              "directions": 2,
+              "image": "penguins/Penguins/zapped.png"
+            },
+            "angel": {
+              "width": 46,
+              "height": 30,
+              "frames": 4,
+              "speed": 3,
+              "directions": 1,
+              "image": "penguins/Penguins/angel.png"
+            },
+            "splatted": {
+              "width": 32,
+              "height": 32,
+              "frames": 12,
+              "speed": 4,
+              "directions": 1,
+              "image": "penguins/Penguins/splat.png"
+            },
+            "action0": {
+              "width": 32,
+              "height": 32,
+              "frames": 14,
+              "speed": 0,
+              "directions": 1,
+              "loop": -6,
+              "image": "penguins/Penguins/digger.png"
+            }
+          }
+        }
+      ]
+    },
+    "Turtles": {
+      "delay": 60,
+      "genera": [
+        {
+          "name": "Turtles",
+          "number": 8,
+          "anims": {
+            "walker": {
+              "width": 30,
+              "height": 30,
+              "frames": 8,
+              "speed": 4,
+              "directions": 2,
+              "image": "penguins/Turtles/walker.png"
+            },
+            "faller": {
+              "width": 30,
+              "height": 30,
+              "frames": 8,
+              "speed": 3,
+              "directions": 1,
+              "image": "penguins/Turtles/faller.png"
+            },
+            "tumbler": {
+              "width": 30,
+              "height": 30,
+              "frames": 8,
+              "speed": 1,
+              "directions": 1,
+              "acceleration": 1,
+              "terminal_velocity": 8,
+              "image": "penguins/Turtles/tumbler.png"
+            },
+            "climber": {
+              "width": 30,
+              "height": 30,
+              "frames": 8,
+              "speed": 4,
+              "directions": 2,
+              "image": "penguins/Turtles/climber.png"
+            },
+            "floater": {
+              "width": 30,
+              "height": 30,
+              "frames": 8,
+              "speed": 4,
+              "directions": 1,
+              "image": "penguins/Turtles/floater.png"
+            },
+            "exit": {
+              "width": 30,
+              "height": 30,
+              "frames": 16,
+              "speed": 4,
+              "directions": 1,
+              "image": "penguins/Turtles/bomber.png"
+            },
+            "explosion": {
+              "width": 64,
+              "height": 64,
+              "frames": 1,
+              "speed": 4,
+              "directions": 1,
+              "image": "penguins/Turtles/explosion.png"
+            }
+          }
+        }
+      ]
     }
-  ],
+  },
   "snow": {
     "flakes": [
       {

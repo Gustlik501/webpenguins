@@ -16,43 +16,61 @@ const XSNOW_PIX = path.join(root, "vendor", "xsnow-3.9.3", "src", "Pixmaps");
 const OUT_PENGUINS = path.join(root, "assets", "penguins");
 const OUT_SNOW = path.join(root, "assets", "snow");
 
+fs.rmSync(OUT_PENGUINS, { recursive: true, force: true }); // drop stale layouts
 fs.mkdirSync(OUT_PENGUINS, { recursive: true });
 fs.mkdirSync(OUT_SNOW, { recursive: true });
 fs.mkdirSync(path.join(root, "src", "generated"), { recursive: true });
 
-const images = {}; // relative name -> { png: Buffer, width, height }
+const images = {}; // key relative to assets/ -> { png: Buffer, width, height }
 
 function convert(xpmPath, outDir, outName) {
   const img = parseXpm(fs.readFileSync(xpmPath, "latin1"), path.basename(xpmPath));
   const png = encodePng(img.width, img.height, img.rgba);
-  fs.writeFileSync(path.join(outDir, outName), png);
-  images[path.basename(outDir) + "/" + outName] = { png, width: img.width, height: img.height };
+  const outPath = path.join(outDir, outName);
+  fs.writeFileSync(outPath, png);
+  const key = path.relative(path.join(root, "assets"), outPath).split(path.sep).join("/");
+  images[key] = { png, width: img.width, height: img.height };
   return img;
 }
 
 // ---------------------------------------------------------------- penguins
-const themeDir = path.join(XPENGUINS, "themes", "Penguins");
-const theme = parseThemeConfig(fs.readFileSync(path.join(themeDir, "config"), "utf8"));
+// Every theme shipped in the original tarball: Penguins, Big Penguins,
+// Classic Penguins, Turtles, Bill. Directory underscores become spaces in
+// the user-facing names, as in the original `xpenguins -t "Big Penguins"`.
+const themes = {};
+const themeDirs = fs
+  .readdirSync(path.join(XPENGUINS, "themes"))
+  .filter((d) => fs.existsSync(path.join(XPENGUINS, "themes", d, "config")));
 
-const converted = new Set();
-for (const genus of theme.genera) {
-  for (const [animName, anim] of Object.entries(genus.anims)) {
-    const pngName = anim.pixmap.replace(/\.xpm$/, ".png");
-    if (!converted.has(pngName)) {
-      const img = convert(path.join(themeDir, anim.pixmap), OUT_PENGUINS, pngName);
-      converted.add(pngName);
-      // Sanity check: sheet must be frames wide x directions tall.
-      const expectW = (anim.frames ?? 8) * (anim.width ?? 30);
-      const expectH = (anim.directions ?? 1) * (anim.height ?? 30);
-      if (img.width !== expectW || img.height !== expectH) {
-        console.warn(
-          `note: ${anim.pixmap} is ${img.width}x${img.height}, config implies ${expectW}x${expectH} (${genus.name}/${animName})`
-        );
+for (const dirName of themeDirs) {
+  const displayName = dirName.replace(/_/g, " ");
+  const themeDir = path.join(XPENGUINS, "themes", dirName);
+  const theme = parseThemeConfig(fs.readFileSync(path.join(themeDir, "config"), "utf8"));
+  const outDir = path.join(OUT_PENGUINS, dirName);
+  fs.mkdirSync(outDir, { recursive: true });
+
+  const converted = new Set();
+  for (const genus of theme.genera) {
+    if (genus.name === "toon") genus.name = displayName; // anonymous genus
+    for (const [animName, anim] of Object.entries(genus.anims)) {
+      const pngName = anim.pixmap.replace(/\.xpm$/, ".png");
+      if (!converted.has(pngName)) {
+        const img = convert(path.join(themeDir, anim.pixmap), outDir, pngName);
+        converted.add(pngName);
+        // Sanity check: sheet must be frames wide x directions tall.
+        const expectW = (anim.frames ?? 8) * (anim.width ?? 30);
+        const expectH = (anim.directions ?? 1) * (anim.height ?? 30);
+        if (img.width !== expectW || img.height !== expectH) {
+          console.warn(
+            `note: ${dirName}/${anim.pixmap} is ${img.width}x${img.height}, config implies ${expectW}x${expectH} (${genus.name}/${animName})`
+          );
+        }
       }
+      anim.image = `penguins/${dirName}/${pngName}`;
+      delete anim.pixmap;
     }
-    anim.image = "penguins/" + pngName;
-    delete anim.pixmap;
   }
+  themes[displayName] = { delay: theme.delay, genera: theme.genera };
 }
 
 // ---------------------------------------------------------------- xsnow
@@ -106,8 +124,7 @@ for (const size of santaSizes) {
 
 // ---------------------------------------------------------------- outputs
 const manifest = {
-  delay: theme.delay,
-  genera: theme.genera,
+  themes,
   snow: {
     flakes,
     santas,

@@ -58,8 +58,10 @@ export class PenguinManager {
           progressed = true;
         }
       }
+      // The first pass legitimately adds nothing when every genus has
+      // number 1 (Bill); only stop once a full-rate pass comes up empty.
+      if (!progressed && imod === 0) break;
       imod = 0;
-      if (!progressed) break;
     }
   }
 
@@ -121,7 +123,7 @@ export class PenguinManager {
 
   /** Grow or shrink the flock; excess penguins bomb themselves (with blood). */
   setNumber(n: number): void {
-    n = Math.max(0, Math.min(PENGUIN_MAX, Math.round(n)));
+    n = Math.max(0, Math.min(this.toons.length, Math.round(n)));
     if (n > this.penguinNumber) {
       for (let i = this.penguinNumber; i < n; i++) {
         this.initPenguin(this.toons[i]);

@@ -98,6 +98,30 @@ try {
   );
   console.log("SCROLLED:", await probe.eval("document.getElementById('out').textContent"));
   await probe.screenshot(path.join(shots, "probe.png"));
+
+  // Themes: Turtles has the anonymous-genus config, Bill the 150ms tick.
+  for (const theme of ["Turtles", "Bill"]) {
+    const check = await probe.eval(`
+      (function () {
+        window.flock.destroy();
+        window.flock = WebPenguins.start({ penguins: 5, theme: "${theme}", debug: true });
+        return new Promise(function (res) {
+          setTimeout(function () {
+            var d = window.__webpenguins;
+            res({
+              genera: d.manager.genera.map(function (g) { return g.name; }),
+              active: d.manager.toons.slice(0, d.manager.penguinNumber)
+                .filter(function (t) { return t.active; }).length,
+              ticks: d.engine.tickCount,
+              err: d.engine.lastError || "none"
+            });
+          }, 2200);
+        });
+      })()
+    `);
+    console.log(`THEME-CHECK ${theme}:`, JSON.stringify(check));
+  }
+  await probe.screenshot(path.join(shots, "probe-theme.png"));
   probe.close();
 
   // ---- demo: rect audit + the pretty screenshot ----

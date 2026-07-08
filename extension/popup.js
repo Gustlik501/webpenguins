@@ -5,6 +5,7 @@
 var DEFAULTS = {
   enabled: true,
   penguins: 25,
+  theme: "Penguins",
   snow: true,
   santa: "big",
   trees: 0,
@@ -31,6 +32,7 @@ function render(s) {
   $("enabled").checked = !!s.enabled;
   $("penguins").value = s.penguins;
   $("penguinsCount").textContent = s.penguins;
+  $("theme").value = s.theme || "Penguins";
   $("snow").checked = !!s.snow;
   $("santa").value = s.santa === false ? "off" : s.santa;
   $("trees").value = s.trees;
@@ -81,6 +83,9 @@ $("penguins").addEventListener("change", function () {
   save({ penguins: Number(this.value) });
 });
 
+$("theme").addEventListener("change", function () {
+  save({ theme: this.value });
+});
 $("snow").addEventListener("change", function () {
   save({ snow: this.checked });
 });

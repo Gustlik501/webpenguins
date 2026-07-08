@@ -189,6 +189,13 @@ await flock.stop();          // the classic bomber exit sequence
 </main>
 
 <div class="controls" data-webpenguins="ignore">
+  <select onchange="window.flock=WebPenguins.start({trees:3,theme:this.value})">
+    <option>Penguins</option>
+    <option>Big Penguins</option>
+    <option>Classic Penguins</option>
+    <option>Turtles</option>
+    <option>Bill</option>
+  </select>
   <button onclick="flock.setPenguins((window._n=(window._n||8)+4))">+4 penguins</button>
   <button onclick="flock.stop()">💣 bomb them</button>
   <button onclick="window.flock=WebPenguins.start({trees:3})">restart</button>

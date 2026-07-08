@@ -116,6 +116,12 @@ export interface SolidRect {
 export interface WebPenguinsOptions {
   /** Number of penguins, up to 80. 0 disables them. Default 25. */
   penguins?: number;
+  /**
+   * Theme(s) from the original xpenguins theme pack: "Penguins" (default),
+   * "Big Penguins", "Classic Penguins", "Turtles", "Bill". A list runs them
+   * together, like `xpenguins -t a -t b`; the first sets the tick pace.
+   */
+  theme?: string | string[];
   /** Snow on/off, or a flake count. Default true. */
   snow?: boolean | number;
   /** Santa flyby: false or a sled size. Default "big". */

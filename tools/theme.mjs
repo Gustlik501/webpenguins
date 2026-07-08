@@ -24,6 +24,16 @@ export function parseThemeConfig(text) {
   let genus = null;
   let current = null; // either `defaults` or an animation definition
 
+  // Themes without a "toon" keyword (Turtles, Classic Penguins) are one
+  // anonymous genus; its definitions and `number` appear at the top level.
+  const ensureGenus = () => {
+    if (!genus) {
+      genus = { name: "toon", number: 1, anims: {} };
+      theme.genera.push(genus);
+    }
+    return genus;
+  };
+
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
     if (t === "delay") {
@@ -37,10 +47,10 @@ export function parseThemeConfig(text) {
         current = defaults;
       } else {
         current = { ...defaults };
-        genus.anims[name] = current;
+        ensureGenus().anims[name] = current;
       }
     } else if (t === "number") {
-      genus.number = Number(tokens[++i]);
+      ensureGenus().number = Number(tokens[++i]);
     } else if (t === "pixmap") {
       current.pixmap = tokens[++i];
     } else if (NUM_PROPS.has(t)) {

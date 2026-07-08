@@ -4,7 +4,7 @@
 import { PenguinManager, ZapPoint } from "./penguins";
 import { Renderer } from "./render";
 import { SnowSystem } from "./snow";
-import { buildGenera, loadAllImages, THEME_DELAY } from "./sprites";
+import { buildGenera, loadImages, resolveThemes, themeDelay } from "./sprites";
 import { Surfaces } from "./surfaces";
 import { WebPenguinsOptions } from "./types";
 import { World } from "./world";
@@ -44,6 +44,7 @@ export class Engine {
   private destroyed = false;
   private terminating = false;
   private scale = 1;
+  private delay = 60; // ms per tick, set by the theme (Bill runs at 150)
   // debug instrumentation (exposed via the `debug` option)
   loopCount = 0;
   tickCount = 0;
@@ -52,11 +53,17 @@ export class Engine {
   private cleanups: Array<() => void> = [];
 
   constructor(private opts: WebPenguinsOptions) {
-    this.ready = this.init();
+    this.ready = this.init().catch((err) => {
+      // Surface init failures in the debug counters instead of a silent
+      // unhandled rejection (stop()/set() await `ready` and must not throw).
+      this.lastError = String(err && (err as Error).stack ? (err as Error).stack : err);
+    });
   }
 
   private async init(): Promise<void> {
-    await loadAllImages();
+    const themes = resolveThemes(this.opts.theme);
+    this.delay = themeDelay(themes);
+    await loadImages(themes);
     if (this.destroyed) return;
     const opts = this.opts;
     const scale = resolveScale(opts.scale);
@@ -73,7 +80,7 @@ export class Engine {
     this.surfaces.start();
     this.world.setRects(this.surfaces.getRects());
 
-    const genera = buildGenera(scale);
+    const genera = buildGenera(themes, scale);
     const manager = new PenguinManager(this.world, genera, scale);
     this.manager = manager;
     manager.blood = opts.blood ?? true;
@@ -148,8 +155,8 @@ export class Engine {
     let remaining = -1;
     try {
       let ticks = 0;
-      while (this.acc >= THEME_DELAY && ticks < MAX_CATCHUP_TICKS) {
-        this.acc -= THEME_DELAY;
+      while (this.acc >= this.delay && ticks < MAX_CATCHUP_TICKS) {
+        this.acc -= this.delay;
         remaining = this.tick();
         this.tickCount++;
         ticks++;
