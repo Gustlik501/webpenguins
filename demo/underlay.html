@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<!-- Dev-only probe for the "underlay canvas" page pattern (google.com dark
+     mode): the page background is painted by a fixed div that is nobody's
+     ancestor, html/body stay transparent. Regression cases:
+       #phantom — same color as the visible canvas: must NOT be solid
+       #pill    — the real search pill inside #phantom: MUST be solid
+       #scrim   — transparent hit-test overlay above #pill: must not occlude
+       #buried  — genuinely covered by the opaque #banner: must be occluded -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>underlay probe</title>
+<style>
+  html, body { margin: 0; background: transparent; }
+  #underlay { position: fixed; inset: 0; background: #202124; z-index: -1; }
+  main { position: relative; width: 720px; margin: 0 auto; padding-top: 120px; height: 1400px; }
+  h2 { color: #e8eaed; font: 24px/1.3 Arial, sans-serif; margin: 16px 24px; }
+</style>
+</head>
+<body>
+<div id="underlay"></div>
+<main>
+  <!-- invisible container: background identical to the canvas behind it -->
+  <div id="phantom" style="background:#202124;width:660px;height:200px;padding-top:1px">
+    <h2>A header inside an invisible box</h2>
+    <!-- the visible pill lives INSIDE the phantom, like google's search box -->
+    <div id="pill" style="background:#363840;border:1px solid #4d5156;border-radius:26px;
+         box-shadow:0 2px 6px rgba(23,23,23,.32);width:600px;height:52px;margin:20px 24px"></div>
+  </div>
+  <!-- transparent event overlay stretched across the pill area -->
+  <div id="scrim" style="position:absolute;left:0;top:0;width:100%;height:420px;background:transparent"></div>
+
+  <div id="buried" style="background:#5c6470;width:400px;height:80px;margin-top:80px"></div>
+  <div id="banner" style="position:absolute;left:0;top:395px;width:500px;height:120px;background:#2d2f36"></div>
+</main>
+<script src="../dist/webpenguins.js"></script>
+<script>
+  window.flock = WebPenguins.start({ penguins: 4, debug: true });
+</script>
+</body>
+</html>

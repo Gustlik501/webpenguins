@@ -160,6 +160,7 @@ export class Surfaces {
   // per-scan memoization
   private backdropCache = new Map<Element, string>();
   private gluedCache = new Map<Element, boolean>();
+  private pageCanvas = "rgb(255, 255, 255)";
   // pixel masks (rescan shortly after a cross-origin retry succeeds)
   private masks = new MaskRegistry(() => this.scheduleRescan(50));
 
@@ -224,6 +225,40 @@ export class Surfaces {
       }
       cur = cur.parentElement;
     }
+    return this.pageCanvas;
+  }
+
+  /**
+   * The color of the page's visible canvas — what shows through where no
+   * ancestor paints. Dark-theme sites (google.com among them) often paint
+   * the page from an *underlay* div that is nobody's ancestor; assuming a
+   * white canvas there made same-colored boxes look like they contrast,
+   * turning invisible containers into phantom platforms.
+   */
+  private resolvePageCanvas(): string {
+    const html = getComputedStyle(document.documentElement);
+    if (alphaOf(html.backgroundColor) >= 0.9) return html.backgroundColor;
+    if (document.body) {
+      const body = getComputedStyle(document.body);
+      if (alphaOf(body.backgroundColor) >= 0.9) return body.backgroundColor;
+    }
+    // Sample what is actually rendered at points that are usually bare
+    // background, and take the first viewport-filling opaque layer.
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    for (const [fx, fy] of [
+      [0.5, 0.98],
+      [0.02, 0.5],
+      [0.98, 0.5],
+    ]) {
+      for (const hit of document.elementsFromPoint(vw * fx, vh * fy)) {
+        const st = getComputedStyle(hit);
+        if (alphaOf(st.backgroundColor) < 0.9) continue;
+        const r = hit.getBoundingClientRect();
+        if (r.width >= vw * 0.7 && r.height >= vh * 0.7) return st.backgroundColor;
+        break; // an opaque but small element: this point is inside content
+      }
+    }
     return "rgb(255, 255, 255)"; // the browser's default canvas
   }
 
@@ -287,15 +322,23 @@ export class Surfaces {
     const y = box.y + 2;
     if (y < 0 || y > window.innerHeight) return false; // off screen: trust it
     let samples = 0;
-    let related = 0;
+    let covered = 0;
     for (const fx of [0.2, 0.5, 0.8]) {
       const x = box.x + box.w * fx;
       if (x < 0 || x > window.innerWidth) continue;
       samples++;
-      const hit = document.elementFromPoint(x, y);
-      if (hit && (hit === el || el.contains(hit) || hit.contains(el))) related++;
+      // Walk the hit-test stack top-down. Invisible layers (transparent
+      // event scrims, positioning wrappers) hide nothing — only an element
+      // that actually paints can cover us.
+      for (const hit of document.elementsFromPoint(x, y)) {
+        if (hit === el || el.contains(hit) || hit.contains(el)) break; // reached our own layer
+        if (this.paints(hit, getComputedStyle(hit))) {
+          covered++;
+          break;
+        }
+      }
     }
-    return samples > 0 && related === 0;
+    return samples > 0 && covered === samples;
   }
 
   scan(): void {
@@ -306,6 +349,7 @@ export class Surfaces {
     const sy = window.scrollY;
     this.backdropCache.clear();
     this.gluedCache.clear();
+    this.pageCanvas = this.resolvePageCanvas();
 
     const found: Surface[] = [];
     const accepted: Element[] = [];
@@ -469,5 +513,73 @@ export class Surfaces {
     const moved = this.generation !== this.lastTickGeneration;
     this.lastTickGeneration = this.generation;
     return moved;
+  }
+
+  /**
+   * Debug: why is (or isn't) this element a surface? Runs the scan gates on
+   * one element and reports each verdict. From devtools, with the engine
+   * started with { debug: true }: window.__webpenguins.explain($0)
+   */
+  explain(el: Element): Record<string, unknown> {
+    const describe = (e: Element) =>
+      e.tagName + (e.className && typeof e.className === "string" ? "." + e.className.split(/\s+/).join(".").slice(0, 60) : "");
+    const out: Record<string, unknown> = { element: describe(el) };
+    const fail = (because: string) => {
+      out.solid = false;
+      out.because = because;
+      return out;
+    };
+    const tag = el.tagName.toUpperCase();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const rect = el.getBoundingClientRect();
+    out.rect = `${Math.round(rect.left)},${Math.round(rect.top)} ${Math.round(rect.width)}x${Math.round(rect.height)} (viewport coords)`;
+
+    if (NEVER_SOLID.has(tag)) return fail("this tag is never solid");
+    const hint = el.getAttribute("data-webpenguins");
+    if (hint === "ignore") return fail('data-webpenguins="ignore"');
+    if (rect.width < MIN_WIDTH || rect.height < (tag === "HR" ? 1 : MIN_HEIGHT)) {
+      return fail(`too small (needs ${MIN_WIDTH}x${MIN_HEIGHT})`);
+    }
+    if (rect.width > vw * 0.98 && rect.height > vh * 0.85) return fail("page-wrapper sized");
+    if (rect.height > vh * 1.5) return fail("taller than 1.5 viewports");
+    if (el.closest('[data-webpenguins="ignore"]')) return fail("inside an ignored subtree");
+    const parent = this.surfaces.find((s) => s.el !== el && s.el.contains(el));
+    if (parent) return fail("nested inside an accepted surface: " + describe(parent.el));
+
+    const st = getComputedStyle(el);
+    if (st.visibility === "hidden" || st.display === "none" || parseFloat(st.opacity) < 0.15) {
+      return fail("not visible");
+    }
+    out.pageCanvas = this.pageCanvas;
+    out.backdrop = this.backdropOf(el);
+    out.background = st.backgroundColor;
+    const paints = hint === "solid" || this.paints(el, st);
+    out.paints = hint === "solid" ? "forced by data-webpenguins" : paints;
+    if (!paints && HEADINGS.has(tag)) out.note = "heading: would collide via its text ink box";
+    else if (!paints) {
+      return fail(
+        "paints nothing visible (no border/shadow/image, and its background does not differ from the backdrop behind it)"
+      );
+    }
+    if (this.viewportGlued(el)) return fail("fixed/sticky: glued to the viewport, not the page");
+    const clipped = this.clipByAncestors(el, {
+      x: rect.left,
+      y: rect.top,
+      w: rect.width,
+      h: rect.height,
+    });
+    if (!clipped) return fail("fully clipped by an overflow ancestor");
+    if (MASKABLE.has(tag) && hint !== "solid") {
+      out.mask = this.masks.lookup(el, rect.width, rect.height).status;
+      if (out.mask === "empty") return fail("mask: fully transparent content");
+    }
+    if (this.occluded(el, clipped)) return fail("top edge covered by another painting element");
+    out.solid = this.surfaces.some((s) => s.el === el);
+    if (!out.solid) {
+      out.because =
+        "passes every gate — likely scanned before it existed, beyond the examine limit, or lost the nearest-160 windowing; it should appear on the next rescan if visible";
+    }
+    return out;
   }
 }

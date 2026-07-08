@@ -127,6 +127,8 @@ export class Engine {
         world: this.world,
         manager,
         surfaces: this.surfaces,
+        // why is (or isn't) $0 a platform?
+        explain: (el: Element) => this.surfaces.explain(el),
       };
     }
     this.rafId = requestAnimationFrame(this.loop);

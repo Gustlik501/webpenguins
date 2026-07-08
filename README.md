@@ -59,6 +59,11 @@ Page authors can hint the surface scanner:
 `data-webpenguins="solid"` forces an element to be a platform,
 `data-webpenguins="ignore"` excludes it (and its descendants).
 
+Wondering why penguins do (or don't) land on something? Start with
+`WebPenguins.start({ debug: true, ... })`, select the element in devtools,
+and run `window.__webpenguins.explain($0)` — it reports the verdict of every
+gate in the surface scanner for that element.
+
 ## The extension
 
 `extension/` is a Manifest V3 extension (Chrome, Edge, Firefox ≥ 121). Load it
@@ -79,11 +84,15 @@ no background worker, no messaging, no page-visible globals.
   and it is style-aware: a box is only solid if it actually **paints**
   something visible — a background that differs from the effective backdrop
   behind it, a visible border/outline/shadow on any side, a gradient, or
-  real replaced content (a *loaded* image, a video…). Bare headings collide
-  with their text's ink box instead of their full-width layout box, rects
-  are clipped by `overflow: hidden` ancestors, rounded corners become part
-  of the collision shape (see below), and boxes hidden behind overlays are
-  dropped (`elementFromPoint` sampling). The **document is the desktop**:
+  real replaced content (a *loaded* image, a video…). The page's true
+  canvas color is resolved even when it's painted by a non-ancestor
+  underlay div (google.com-style dark themes do this), so boxes the same
+  color as the page stay invisible. Bare headings collide with their
+  text's ink box instead of their full-width layout box, rects are clipped
+  by `overflow: hidden` ancestors, rounded corners become part of the
+  collision shape (see below), and boxes hidden behind other *painting*
+  elements are dropped — transparent hit-test overlays don't count
+  (`elementsFromPoint` sampling). The **document is the desktop**:
   everything lives in page coordinates and scrolling only moves the camera,
   so penguins stay alive whether on screen or not. Only real layout changes
   count as "windows moving" and go through the original
