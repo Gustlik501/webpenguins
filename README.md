@@ -43,7 +43,7 @@ await flock.stop();          // the classic exit: everyone lights a bomb 💣
 | option                 | default    | what it does |
 | ---------------------- | ---------- | ------------ |
 | `penguins`             | `25`       | flock size, up to 80 |
-| `theme`                | `"Penguins"` | any original theme: `"Penguins"`, `"Big Penguins"`, `"Classic Penguins"`, `"Turtles"`, `"Bill"` — or a list to mix them, like `xpenguins -t a -t b` |
+| `theme`                | `"Penguins"` | `"Penguins"`, `"Big Penguins"`, `"Classic Penguins"`, `"Turtles"`, `"Bill"`, `"Lemmings"`, `"Sonic the Hedgehog"`, `"The Simpsons"`, `"Winnie the Pooh"`, `"Worms"` — or a list to mix them, like `xpenguins -t a -t b` |
 | `snow`                 | `true`     | `false`, `true`, or a flake count |
 | `santa`                | `"big"`    | `false`, `"regular"`, `"medium"`, `"big"` (original xsnow sizes & speeds) |
 | `rudolf`               | `true`     | Rudolf leads the sled |
@@ -163,6 +163,17 @@ curl -LO https://deb.debian.org/debian/pool/main/x/xsnow/xsnow_3.9.3.orig.tar.gz
 tar -C vendor -xzf xpenguins_2.2.orig.tar.gz && tar -C vendor -xzf xsnow_3.9.3.orig.tar.gz
 ```
 
+Optionally, the contributed theme pack from the official site (which is,
+wonderfully, still online and untouched since 2005):
+
+```
+curl -o vendor/xpenguins_themes-1.0.tar.gz http://xpenguins.seul.org/xpenguins_themes-1.0.tar.gz
+mkdir -p vendor/xpenguins_themes-1.0 && tar -C vendor/xpenguins_themes-1.0 -xzf vendor/xpenguins_themes-1.0.tar.gz
+```
+
+`build-assets` picks it up automatically; without it you get a bundle with
+just the five GPL themes from the main tarball.
+
 ## Provenance & license
 
 - **xpenguins 2.2** © 1999–2001 Robin Hogan — GPL-2+. All five original
@@ -171,6 +182,13 @@ tar -C vendor -xzf xpenguins_2.2.orig.tar.gz && tar -C vendor -xzf xsnow_3.9.3.o
   skateboarder crew…) and the entire behaviour model.
 - **xsnow** © Rick Jansen (1984–2001), continued by Willem Vermin — GPL-3.
   Flakes, Santa (all sizes, with/without Rudolf), tannenbaum, moon.
+- **xpenguins_themes-1.0** — the user-contributed pack from
+  xpenguins.seul.org (*Lemmings*, *Sonic the Hedgehog*, *The Simpsons*,
+  *Winnie the Pooh*, *Worms*). These are fan-made sprites of characters
+  owned by DMA Design/Psygnosis, Sega, Fox, Disney and Team17
+  respectively; they have circulated with xpenguins since 2001 but are
+  **not** GPL-clean. If that matters for your deployment, build without
+  the pack (see above) for a GPL-only bundle.
 - This project: **GPL-3.0-or-later** (see `LICENSE`). Sprites are converted
   losslessly from the original XPMs; the flake masks are tinted the way xsnow
   itself painted them at runtime.

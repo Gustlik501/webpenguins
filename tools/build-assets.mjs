@@ -34,17 +34,27 @@ function convert(xpmPath, outDir, outName) {
 }
 
 // ---------------------------------------------------------------- penguins
-// Every theme shipped in the original tarball: Penguins, Big Penguins,
-// Classic Penguins, Turtles, Bill. Directory underscores become spaces in
-// the user-facing names, as in the original `xpenguins -t "Big Penguins"`.
+// Themes from the original tarball (Penguins, Big Penguins, Classic
+// Penguins, Turtles, Bill) plus — when present — the contributed pack from
+// xpenguins.seul.org (Sonic the Hedgehog, The Simpsons, Lemmings, Winnie
+// the Pooh, Worms; see README for the fetch command and the licensing
+// caveat). Directory underscores become spaces in the user-facing names,
+// as in the original `xpenguins -t "Big Penguins"`.
+const THEME_ROOTS = [
+  path.join(XPENGUINS, "themes"),
+  path.join(root, "vendor", "xpenguins_themes-1.0", "themes"), // optional
+];
 const themes = {};
-const themeDirs = fs
-  .readdirSync(path.join(XPENGUINS, "themes"))
-  .filter((d) => fs.existsSync(path.join(XPENGUINS, "themes", d, "config")));
+const themeDirs = THEME_ROOTS.filter((r) => fs.existsSync(r)).flatMap((themesRoot) =>
+  fs
+    .readdirSync(themesRoot)
+    .filter((d) => fs.existsSync(path.join(themesRoot, d, "config")))
+    .map((d) => ({ themesRoot, dirName: d }))
+);
 
-for (const dirName of themeDirs) {
+for (const { themesRoot, dirName } of themeDirs) {
   const displayName = dirName.replace(/_/g, " ");
-  const themeDir = path.join(XPENGUINS, "themes", dirName);
+  const themeDir = path.join(themesRoot, dirName);
   const theme = parseThemeConfig(fs.readFileSync(path.join(themeDir, "config"), "utf8"));
   const outDir = path.join(OUT_PENGUINS, dirName);
   fs.mkdirSync(outDir, { recursive: true });

@@ -117,9 +117,11 @@ export interface WebPenguinsOptions {
   /** Number of penguins, up to 80. 0 disables them. Default 25. */
   penguins?: number;
   /**
-   * Theme(s) from the original xpenguins theme pack: "Penguins" (default),
-   * "Big Penguins", "Classic Penguins", "Turtles", "Bill". A list runs them
-   * together, like `xpenguins -t a -t b`; the first sets the tick pace.
+   * Theme(s): "Penguins" (default), "Big Penguins", "Classic Penguins",
+   * "Turtles", "Bill" — and, when built with the contributed pack from
+   * xpenguins.seul.org: "Lemmings", "Sonic the Hedgehog", "The Simpsons",
+   * "Winnie the Pooh", "Worms". A list runs them together, like
+   * `xpenguins -t a -t b`; the first sets the tick pace.
    */
   theme?: string | string[];
   /** Snow on/off, or a flake count. Default true. */

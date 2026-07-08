@@ -99,8 +99,9 @@ try {
   console.log("SCROLLED:", await probe.eval("document.getElementById('out').textContent"));
   await probe.screenshot(path.join(shots, "probe.png"));
 
-  // Themes: Turtles has the anonymous-genus config, Bill the 150ms tick.
-  for (const theme of ["Turtles", "Bill"]) {
+  // Themes: Turtles has the anonymous-genus config, Bill the 150ms tick,
+  // "simpsons" exercises fuzzy name resolution + the contributed pack.
+  for (const theme of ["Turtles", "Bill", "simpsons"]) {
     const check = await probe.eval(`
       (function () {
         window.flock.destroy();

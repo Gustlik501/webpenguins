@@ -49,12 +49,15 @@ export function themeNames(): string[] {
   return Object.keys(THEMES);
 }
 
-/** "big_penguins", "Big Penguins" and "BigPenguins" all resolve. */
+/** "big_penguins", "Big Penguins", "BigPenguins" — and "sonic" — resolve. */
 function resolveTheme(name: string): string | null {
   const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
   const target = norm(name);
-  for (const key of Object.keys(THEMES)) if (norm(key) === target) return key;
-  return null;
+  if (!target) return null;
+  const keys = Object.keys(THEMES);
+  for (const key of keys) if (norm(key) === target) return key;
+  const partial = keys.filter((key) => norm(key).includes(target));
+  return partial.length === 1 ? partial[0] : null;
 }
 
 /** Normalize the `theme` option to a list of valid manifest keys. */
