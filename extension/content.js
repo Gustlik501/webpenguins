@@ -5,9 +5,9 @@
 
   var DEFAULTS = {
     enabled: true,
-    penguins: 8,
+    penguins: 25,
     snow: true,
-    santa: "medium",
+    santa: "big",
     trees: 0,
     blood: true,
     zap: true,

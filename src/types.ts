@@ -114,11 +114,11 @@ export interface SolidRect {
 }
 
 export interface WebPenguinsOptions {
-  /** Number of penguins. 0 disables them. Default: theme default (8). */
+  /** Number of penguins, up to 80. 0 disables them. Default 25. */
   penguins?: number;
   /** Snow on/off, or a flake count. Default true. */
   snow?: boolean | number;
-  /** Santa flyby: false or a sled size. Default "medium". */
+  /** Santa flyby: false or a sled size. Default "big". */
   santa?: boolean | "regular" | "medium" | "big";
   /** Rudolf leads the sled. Default true. */
   rudolf?: boolean;

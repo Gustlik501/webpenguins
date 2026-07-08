@@ -14,7 +14,7 @@ import {
 } from "./types";
 import { World } from "./world";
 
-const PENGUIN_MAX = 256;
+const PENGUIN_MAX = 80;
 
 export interface ZapPoint {
   x: number;
@@ -69,10 +69,6 @@ export class PenguinManager {
     t.active = false;
     t.terminating = true; // don't spawn until asked for
     return t;
-  }
-
-  defaultNumber(): number {
-    return this.genera.reduce((s, g) => s + g.number, 0);
   }
 
   private initPenguin(p: Toon): void {

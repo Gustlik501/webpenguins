@@ -42,11 +42,11 @@ await flock.stop();          // the classic exit: everyone lights a bomb 💣
 
 | option                 | default    | what it does |
 | ---------------------- | ---------- | ------------ |
-| `penguins`             | `8`        | flock size (theme default: 5 normal + 3 skateboarders) |
+| `penguins`             | `25`       | flock size, up to 80 |
 | `snow`                 | `true`     | `false`, `true`, or a flake count |
-| `santa`                | `"medium"` | `false`, `"regular"`, `"medium"`, `"big"` (original xsnow sizes & speeds) |
+| `santa`                | `"big"`    | `false`, `"regular"`, `"medium"`, `"big"` (original xsnow sizes & speeds) |
 | `rudolf`               | `true`     | Rudolf leads the sled |
-| `trees`                | `0`        | tannenbaums along the bottom of the screen |
+| `trees`                | `0`        | tannenbaums standing on the glass floor at the screen bottom |
 | `moon`                 | `false`    | the xsnow moon, top right |
 | `blood`                | `true`     | allow splat/zap deaths; set `false` for the child-friendly mode (`--no-blood` in the original) |
 | `angels`               | `true`     | exploded penguins ascend |
@@ -128,7 +128,11 @@ no background worker, no messaging, no page-visible globals.
   hard floor.
 - **`src/snow.ts`** — xsnow: the 7 original flake sprites, gusty wind, snow
   height-maps building up on surface tops and the screen bottom, Santa at the
-  original 12/25/50 px/s speeds, optional tannenbaums and moon.
+  original 12/25/50 px/s speeds, optional tannenbaums and moon. The
+  tannenbaum is tinted at runtime just like xsnow's `-tc` option did:
+  classic chartreuse on dark pages, the deeper X11 chartreuse4 on light
+  ones — and the trees stand on the glass floor, so they ride along the
+  visible bottom edge of the screen.
 - **`src/render.ts`** — one full-viewport `<canvas>` overlay,
   `pointer-events: none`, nearest-neighbour scaling. The page is never
   mutated (the canvas hangs off `<html>`, outside `<body>` observers).

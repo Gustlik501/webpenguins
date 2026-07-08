@@ -10,6 +10,7 @@ import { WebPenguinsOptions } from "./types";
 import { World } from "./world";
 
 const MAX_CATCHUP_TICKS = 3;
+const DEFAULT_PENGUINS = 25;
 
 function resolveScale(scale: number | "auto" | undefined): number {
   // Default 1: the original sprite sizes.
@@ -77,13 +78,13 @@ export class Engine {
     this.manager = manager;
     manager.blood = opts.blood ?? true;
     manager.angels = opts.angels ?? true;
-    manager.setNumber(opts.penguins ?? manager.defaultNumber());
+    manager.setNumber(opts.penguins ?? DEFAULT_PENGUINS);
 
     if (opts.snow !== false && opts.snow !== 0) {
       this.snow = new SnowSystem(
         {
           flakes: typeof opts.snow === "number" ? opts.snow : 120,
-          santa: opts.santa === false ? false : opts.santa === true ? "medium" : (opts.santa ?? "medium"),
+          santa: opts.santa === false ? false : opts.santa === true ? "big" : (opts.santa ?? "big"),
           rudolf: opts.rudolf ?? true,
           trees: opts.trees ?? 0,
           moon: opts.moon ?? false,

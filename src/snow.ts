@@ -3,9 +3,10 @@
 // the page, and Santa drifting by at the original xsnow speeds.
 //
 // Two coordinate spaces meet here: flakes, Santa and the moon are weather —
-// they live in the *viewport* (it always snows where you look). Fallen snow,
-// trees and the snowline at the page bottom are part of the world — they
-// live in *document* coords and stay put when you scroll.
+// they live in the *viewport* (it always snows where you look). Fallen snow
+// and the snowline at the page bottom are part of the world — they live in
+// *document* coords and stay put when you scroll. Trees stand on the glass
+// floor, so they are always in sight along the visible bottom edge.
 import { randInt } from "./rng";
 import { getImage, SNOW_ASSETS } from "./sprites";
 import { World } from "./world";
@@ -84,7 +85,7 @@ export class SnowSystem {
   private santaBaseY = 0;
   private santaWait = 0;
   private santaAnim = 0;
-  private treeImg: HTMLImageElement;
+  private treeImg: CanvasImageSource;
   private treeW: number;
   private treeH: number;
   private treeXs: number[] = [];
@@ -95,17 +96,21 @@ export class SnowSystem {
     private opts: SnowOptions,
     private world: World
   ) {
+    const lightPage = pageLuminance() > 0.7;
     this.snowColor =
       opts.snowColor !== "auto" && opts.snowColor
         ? opts.snowColor
-        : pageLuminance() > 0.7
+        : lightPage
           ? "#b9c8da" // light pages: soft slate so snow stays visible
           : "#fffafa"; // the classic X11 "snow"
     this.flakeImages = SNOW_ASSETS.flakes.map((f) =>
       this.snowColor === "#fffafa" ? getImage(f.image) : tintSprite(getImage(f.image), this.snowColor)
     );
     this.flakeSizes = SNOW_ASSETS.flakes.map((f) => ({ w: f.width, h: f.height }));
-    this.treeImg = getImage(SNOW_ASSETS.tree.image);
+    // The tannenbaum, like the flakes, is a shape mask that xsnow tinted at
+    // runtime (-tc, default chartreuse). Dark pages get that classic bright
+    // chartreuse; light pages the darker X11 chartreuse4 so trees still read.
+    this.treeImg = tintSprite(getImage(SNOW_ASSETS.tree.image), lightPage ? "#458b00" : "#7fff00");
     this.treeW = SNOW_ASSETS.tree.width;
     this.treeH = SNOW_ASSETS.tree.height;
     this.moonImg = getImage(SNOW_ASSETS.moon.image);
@@ -317,9 +322,11 @@ export class SnowSystem {
       ctx.drawImage(frame.img, Math.round(this.santaX), Math.round(y), frame.w * s, frame.h * s);
     }
 
-    // world objects: document coords, camera-shifted
+    // Trees stand on the glass floor: always in sight at the screen bottom,
+    // settling onto the page bottom once you scroll there.
+    const glassY = (world.glassActive() ? world.glassY : world.height) - sy;
     for (const x of this.treeXs) {
-      const ty = world.height - this.treeH * s + 1 - sy;
+      const ty = glassY - this.treeH * s + 1;
       if (ty > vh || ty + this.treeH * s < 0) continue;
       ctx.drawImage(this.treeImg, x - sx, ty, this.treeW * s, this.treeH * s);
     }
