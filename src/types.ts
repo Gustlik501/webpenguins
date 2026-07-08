@@ -63,12 +63,19 @@ export const PENGUIN_JUMP = 8;
 
 export interface AnimData {
   image: HTMLImageElement;
-  // frame size in *world* (CSS px, already multiplied by scale)
+  // collision box in *world* px (already scaled): the drawn pixels' bounds,
+  // which can be smaller than the frame cell (sheets often centre the art)
   width: number;
   height: number;
-  // frame size in the source sprite sheet
+  // frame cell size in the source sprite sheet
   srcWidth: number;
   srcHeight: number;
+  // full frame cell, scaled, and the collision box's offset inside it —
+  // the renderer draws the cell at (x - drawDX, y - drawDY)
+  drawW: number;
+  drawH: number;
+  drawDX: number;
+  drawDY: number;
   frames: number;
   directions: number;
   speed: number;

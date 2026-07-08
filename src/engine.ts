@@ -246,7 +246,10 @@ export class Engine {
       const anim = p.data();
       const vx = p.x - sx;
       const vy = p.y - sy;
-      if (vx + anim.width > 0 && vx < renderer.width && vy + anim.height > 0 && vy < renderer.height) {
+      // Cull on the drawn cell, which extends beyond the collision box.
+      const dx = vx - anim.drawDX;
+      const dy = vy - anim.drawDY;
+      if (dx + anim.drawW > 0 && dx < renderer.width && dy + anim.drawH > 0 && dy < renderer.height) {
         renderer.drawSprite(anim, p.frame, p.direction, vx, vy);
       }
       // Hit box for zapping, in document coords (like the click points).

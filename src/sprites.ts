@@ -29,6 +29,8 @@ interface RawAnim {
   acceleration?: number;
   terminal_velocity?: number;
   loop?: number;
+  /** [top, right, bottom, left] transparent padding inside the frame cell. */
+  pad?: readonly number[];
 }
 
 interface RawGenus {
@@ -103,12 +105,19 @@ export function buildGenera(themes: string[], scale: number): GenusData[] {
       const anims: Partial<Record<ToonType, AnimData>> = {};
       for (const [name, raw] of Object.entries(genus.anims)) {
         const type = name as ToonType;
+        // Collide with the drawn pixels' bounds, not the (often padded)
+        // frame cell — otherwise turtles float 6px above their platforms.
+        const [pt, pr, pb, pl] = raw.pad ?? [0, 0, 0, 0];
         anims[type] = {
           image: getImage(raw.image),
-          width: raw.width * scale,
-          height: raw.height * scale,
+          width: (raw.width - pl - pr) * scale,
+          height: (raw.height - pt - pb) * scale,
           srcWidth: raw.width,
           srcHeight: raw.height,
+          drawW: raw.width * scale,
+          drawH: raw.height * scale,
+          drawDX: pl * scale,
+          drawDY: pt * scale,
           frames: raw.frames,
           directions: raw.directions,
           speed: raw.speed * scale,

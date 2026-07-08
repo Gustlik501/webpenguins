@@ -155,6 +155,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 5,
        "directions": 1,
+       "pad": [
+        7,
+        1,
+        0,
+        0
+       ],
        "image": "penguins/Big_Penguins/faller.png"
       },
       "walker": {
@@ -163,6 +169,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 6,
        "directions": 2,
+       "pad": [
+        0,
+        4,
+        0,
+        5
+       ],
        "image": "penguins/Big_Penguins/walker.png"
       },
       "tumbler": {
@@ -173,6 +185,12 @@ export const MANIFEST = {
        "directions": 1,
        "acceleration": 1,
        "terminal_velocity": 12,
+       "pad": [
+        8,
+        1,
+        1,
+        0
+       ],
        "image": "penguins/Big_Penguins/tumbler.png"
       },
       "climber": {
@@ -181,6 +199,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 6,
        "directions": 2,
+       "pad": [
+        7,
+        0,
+        4,
+        0
+       ],
        "image": "penguins/Big_Penguins/climber.png"
       },
       "floater": {
@@ -189,6 +213,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 5,
        "directions": 1,
+       "pad": [
+        0,
+        4,
+        1,
+        5
+       ],
        "image": "penguins/Big_Penguins/floater.png"
       },
       "explosion": {
@@ -197,6 +227,12 @@ export const MANIFEST = {
        "frames": 1,
        "speed": 6,
        "directions": 1,
+       "pad": [
+        0,
+        0,
+        0,
+        5
+       ],
        "image": "penguins/Big_Penguins/explosion.png"
       },
       "exit": {
@@ -213,6 +249,12 @@ export const MANIFEST = {
        "frames": 10,
        "speed": 6,
        "directions": 2,
+       "pad": [
+        4,
+        4,
+        1,
+        5
+       ],
        "image": "penguins/Big_Penguins/zapped.png"
       },
       "splatted": {
@@ -221,6 +263,12 @@ export const MANIFEST = {
        "frames": 12,
        "speed": 6,
        "directions": 1,
+       "pad": [
+        4,
+        1,
+        0,
+        0
+       ],
        "image": "penguins/Big_Penguins/splat.png"
       },
       "angel": {
@@ -229,6 +277,12 @@ export const MANIFEST = {
        "frames": 4,
        "speed": 5,
        "directions": 1,
+       "pad": [
+        0,
+        0,
+        0,
+        4
+       ],
        "image": "penguins/Big_Penguins/angel.png"
       },
       "action0": {
@@ -238,6 +292,12 @@ export const MANIFEST = {
        "speed": 0,
        "directions": 1,
        "loop": -4,
+       "pad": [
+        7,
+        2,
+        0,
+        3
+       ],
        "image": "penguins/Big_Penguins/reader.png"
       }
      }
@@ -262,6 +322,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 3,
        "directions": 1,
+       "pad": [
+        0,
+        1,
+        0,
+        2
+       ],
        "image": "penguins/Big_Penguins/ballooner.png"
       },
       "tumbler": {
@@ -272,6 +338,12 @@ export const MANIFEST = {
        "directions": 1,
        "acceleration": 1,
        "terminal_velocity": 12,
+       "pad": [
+        8,
+        1,
+        1,
+        0
+       ],
        "image": "penguins/Big_Penguins/tumbler.png"
       },
       "climber": {
@@ -290,6 +362,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 12,
        "directions": 2,
+       "pad": [
+        5,
+        0,
+        3,
+        0
+       ],
        "image": "penguins/Big_Penguins/superpenguin.png"
       },
       "exit": {
@@ -298,6 +376,12 @@ export const MANIFEST = {
        "frames": 9,
        "speed": 6,
        "directions": 2,
+       "pad": [
+        7,
+        10,
+        0,
+        11
+       ],
        "image": "penguins/Big_Penguins/exit.png"
       },
       "explosion": {
@@ -306,6 +390,12 @@ export const MANIFEST = {
        "frames": 1,
        "speed": 6,
        "directions": 1,
+       "pad": [
+        0,
+        0,
+        0,
+        5
+       ],
        "image": "penguins/Big_Penguins/explosion.png"
       },
       "zapped": {
@@ -314,6 +404,12 @@ export const MANIFEST = {
        "frames": 10,
        "speed": 6,
        "directions": 2,
+       "pad": [
+        4,
+        4,
+        1,
+        5
+       ],
        "image": "penguins/Big_Penguins/zapped.png"
       },
       "angel": {
@@ -322,6 +418,12 @@ export const MANIFEST = {
        "frames": 4,
        "speed": 5,
        "directions": 1,
+       "pad": [
+        0,
+        0,
+        0,
+        4
+       ],
        "image": "penguins/Big_Penguins/angel.png"
       },
       "splatted": {
@@ -330,6 +432,12 @@ export const MANIFEST = {
        "frames": 12,
        "speed": 6,
        "directions": 1,
+       "pad": [
+        4,
+        1,
+        0,
+        0
+       ],
        "image": "penguins/Big_Penguins/splat.png"
       },
       "action0": {
@@ -339,6 +447,12 @@ export const MANIFEST = {
        "speed": 0,
        "directions": 1,
        "loop": -6,
+       "pad": [
+        0,
+        3,
+        0,
+        3
+       ],
        "image": "penguins/Big_Penguins/digger.png"
       }
      }
@@ -374,6 +488,12 @@ export const MANIFEST = {
        "frames": 1,
        "speed": 4,
        "directions": 1,
+       "pad": [
+        0,
+        0,
+        0,
+        3
+       ],
        "image": "penguins/Bill/explosion.png"
       },
       "runner": {
@@ -436,6 +556,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 4,
        "directions": 2,
+       "pad": [
+        0,
+        3,
+        0,
+        3
+       ],
        "image": "penguins/Classic_Penguins/walker.png"
       },
       "faller": {
@@ -444,6 +570,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 3,
        "directions": 1,
+       "pad": [
+        4,
+        1,
+        0,
+        0
+       ],
        "image": "penguins/Classic_Penguins/faller.png"
       },
       "tumbler": {
@@ -454,6 +586,12 @@ export const MANIFEST = {
        "directions": 1,
        "acceleration": 1,
        "terminal_velocity": 8,
+       "pad": [
+        5,
+        1,
+        1,
+        0
+       ],
        "image": "penguins/Classic_Penguins/tumbler.png"
       },
       "climber": {
@@ -462,6 +600,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 4,
        "directions": 2,
+       "pad": [
+        4,
+        0,
+        3,
+        0
+       ],
        "image": "penguins/Classic_Penguins/climber.png"
       },
       "floater": {
@@ -470,6 +614,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 4,
        "directions": 1,
+       "pad": [
+        0,
+        3,
+        1,
+        3
+       ],
        "image": "penguins/Classic_Penguins/floater.png"
       },
       "exit": {
@@ -486,6 +636,12 @@ export const MANIFEST = {
        "frames": 1,
        "speed": 4,
        "directions": 1,
+       "pad": [
+        0,
+        0,
+        0,
+        3
+       ],
        "image": "penguins/Classic_Penguins/explosion.png"
       }
      }
@@ -505,6 +661,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 3,
        "directions": 1,
+       "pad": [
+        4,
+        1,
+        0,
+        0
+       ],
        "image": "penguins/Penguins/faller.png"
       },
       "walker": {
@@ -513,6 +675,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 4,
        "directions": 2,
+       "pad": [
+        0,
+        3,
+        0,
+        3
+       ],
        "image": "penguins/Penguins/walker.png"
       },
       "tumbler": {
@@ -523,6 +691,12 @@ export const MANIFEST = {
        "directions": 1,
        "acceleration": 1,
        "terminal_velocity": 8,
+       "pad": [
+        5,
+        1,
+        1,
+        0
+       ],
        "image": "penguins/Penguins/tumbler.png"
       },
       "climber": {
@@ -531,6 +705,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 4,
        "directions": 2,
+       "pad": [
+        4,
+        0,
+        3,
+        0
+       ],
        "image": "penguins/Penguins/climber.png"
       },
       "floater": {
@@ -539,6 +719,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 3,
        "directions": 1,
+       "pad": [
+        0,
+        3,
+        1,
+        3
+       ],
        "image": "penguins/Penguins/floater.png"
       },
       "explosion": {
@@ -547,6 +733,12 @@ export const MANIFEST = {
        "frames": 1,
        "speed": 4,
        "directions": 1,
+       "pad": [
+        0,
+        0,
+        0,
+        3
+       ],
        "image": "penguins/Penguins/explosion.png"
       },
       "exit": {
@@ -563,6 +755,12 @@ export const MANIFEST = {
        "frames": 10,
        "speed": 4,
        "directions": 2,
+       "pad": [
+        2,
+        3,
+        1,
+        3
+       ],
        "image": "penguins/Penguins/zapped.png"
       },
       "splatted": {
@@ -571,6 +769,12 @@ export const MANIFEST = {
        "frames": 12,
        "speed": 4,
        "directions": 1,
+       "pad": [
+        2,
+        1,
+        0,
+        0
+       ],
        "image": "penguins/Penguins/splat.png"
       },
       "angel": {
@@ -579,6 +783,12 @@ export const MANIFEST = {
        "frames": 4,
        "speed": 3,
        "directions": 1,
+       "pad": [
+        0,
+        1,
+        0,
+        3
+       ],
        "image": "penguins/Penguins/angel.png"
       },
       "action0": {
@@ -588,6 +798,12 @@ export const MANIFEST = {
        "speed": 0,
        "directions": 1,
        "loop": -4,
+       "pad": [
+        4,
+        2,
+        0,
+        2
+       ],
        "image": "penguins/Penguins/reader.png"
       }
      }
@@ -612,6 +828,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 2,
        "directions": 1,
+       "pad": [
+        0,
+        1,
+        0,
+        1
+       ],
        "image": "penguins/Penguins/ballooner.png"
       },
       "tumbler": {
@@ -622,6 +844,12 @@ export const MANIFEST = {
        "directions": 1,
        "acceleration": 1,
        "terminal_velocity": 8,
+       "pad": [
+        5,
+        1,
+        1,
+        0
+       ],
        "image": "penguins/Penguins/tumbler.png"
       },
       "climber": {
@@ -640,6 +868,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 8,
        "directions": 2,
+       "pad": [
+        3,
+        0,
+        2,
+        0
+       ],
        "image": "penguins/Penguins/superpenguin.png"
       },
       "exit": {
@@ -648,6 +882,12 @@ export const MANIFEST = {
        "frames": 9,
        "speed": 4,
        "directions": 2,
+       "pad": [
+        4,
+        7,
+        0,
+        7
+       ],
        "image": "penguins/Penguins/exit.png"
       },
       "explosion": {
@@ -656,6 +896,12 @@ export const MANIFEST = {
        "frames": 1,
        "speed": 4,
        "directions": 1,
+       "pad": [
+        0,
+        0,
+        0,
+        3
+       ],
        "image": "penguins/Penguins/explosion.png"
       },
       "zapped": {
@@ -664,6 +910,12 @@ export const MANIFEST = {
        "frames": 10,
        "speed": 4,
        "directions": 2,
+       "pad": [
+        2,
+        3,
+        1,
+        3
+       ],
        "image": "penguins/Penguins/zapped.png"
       },
       "angel": {
@@ -672,6 +924,12 @@ export const MANIFEST = {
        "frames": 4,
        "speed": 3,
        "directions": 1,
+       "pad": [
+        0,
+        1,
+        0,
+        3
+       ],
        "image": "penguins/Penguins/angel.png"
       },
       "splatted": {
@@ -680,6 +938,12 @@ export const MANIFEST = {
        "frames": 12,
        "speed": 4,
        "directions": 1,
+       "pad": [
+        2,
+        1,
+        0,
+        0
+       ],
        "image": "penguins/Penguins/splat.png"
       },
       "action0": {
@@ -689,6 +953,12 @@ export const MANIFEST = {
        "speed": 0,
        "directions": 1,
        "loop": -6,
+       "pad": [
+        0,
+        2,
+        0,
+        2
+       ],
        "image": "penguins/Penguins/digger.png"
       }
      }
@@ -708,6 +978,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 4,
        "directions": 2,
+       "pad": [
+        5,
+        0,
+        6,
+        0
+       ],
        "image": "penguins/Turtles/walker.png"
       },
       "faller": {
@@ -716,6 +992,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 3,
        "directions": 1,
+       "pad": [
+        2,
+        1,
+        3,
+        0
+       ],
        "image": "penguins/Turtles/faller.png"
       },
       "tumbler": {
@@ -726,6 +1008,12 @@ export const MANIFEST = {
        "directions": 1,
        "acceleration": 1,
        "terminal_velocity": 8,
+       "pad": [
+        4,
+        1,
+        1,
+        0
+       ],
        "image": "penguins/Turtles/tumbler.png"
       },
       "climber": {
@@ -734,6 +1022,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 4,
        "directions": 2,
+       "pad": [
+        0,
+        5,
+        0,
+        5
+       ],
        "image": "penguins/Turtles/climber.png"
       },
       "floater": {
@@ -742,6 +1036,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 4,
        "directions": 1,
+       "pad": [
+        0,
+        1,
+        1,
+        1
+       ],
        "image": "penguins/Turtles/floater.png"
       },
       "exit": {
@@ -750,6 +1050,12 @@ export const MANIFEST = {
        "frames": 16,
        "speed": 4,
        "directions": 1,
+       "pad": [
+        2,
+        1,
+        0,
+        0
+       ],
        "image": "penguins/Turtles/bomber.png"
       },
       "explosion": {
@@ -758,6 +1064,12 @@ export const MANIFEST = {
        "frames": 1,
        "speed": 4,
        "directions": 1,
+       "pad": [
+        4,
+        6,
+        4,
+        5
+       ],
        "image": "penguins/Turtles/explosion.png"
       }
      }
@@ -785,6 +1097,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 2,
        "directions": 2,
+       "pad": [
+        12,
+        2,
+        0,
+        2
+       ],
        "image": "penguins/Lemmings/walker.png"
       },
       "tumbler": {
@@ -795,6 +1113,12 @@ export const MANIFEST = {
        "directions": 2,
        "acceleration": 1,
        "terminal_velocity": 16,
+       "pad": [
+        8,
+        2,
+        4,
+        2
+       ],
        "image": "penguins/Lemmings/faller.png"
       },
       "climber": {
@@ -803,6 +1127,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 2,
        "directions": 2,
+       "pad": [
+        4,
+        0,
+        4,
+        0
+       ],
        "image": "penguins/Lemmings/climber.png"
       },
       "floater": {
@@ -819,6 +1149,12 @@ export const MANIFEST = {
        "frames": 1,
        "speed": 0,
        "directions": 1,
+       "pad": [
+        0,
+        0,
+        0,
+        3
+       ],
        "image": "penguins/Lemmings/explosion.png"
       },
       "exit": {
@@ -827,6 +1163,12 @@ export const MANIFEST = {
        "frames": 8,
        "speed": 0,
        "directions": 1,
+       "pad": [
+        6,
+        12,
+        0,
+        10
+       ],
        "image": "penguins/Lemmings/exit.png"
       },
       "splatted": {
@@ -835,6 +1177,12 @@ export const MANIFEST = {
        "frames": 16,
        "speed": 0,
        "directions": 1,
+       "pad": [
+        10,
+        0,
+        0,
+        0
+       ],
        "image": "penguins/Lemmings/splat.png"
       },
       "action0": {
@@ -844,6 +1192,12 @@ export const MANIFEST = {
        "speed": 0,
        "directions": 2,
        "loop": -6,
+       "pad": [
+        12,
+        0,
+        0,
+        0
+       ],
        "image": "penguins/Lemmings/blocker.png"
       },
       "action1": {
@@ -853,6 +1207,12 @@ export const MANIFEST = {
        "speed": 1,
        "directions": 2,
        "loop": -6,
+       "pad": [
+        14,
+        0,
+        0,
+        0
+       ],
        "image": "penguins/Lemmings/basher.png"
       },
       "action2": {
@@ -862,6 +1222,12 @@ export const MANIFEST = {
        "speed": 0,
        "directions": 1,
        "loop": -6,
+       "pad": [
+        8,
+        0,
+        0,
+        0
+       ],
        "image": "penguins/Lemmings/digger.png"
       }
      }
@@ -904,6 +1270,12 @@ export const MANIFEST = {
        "height": 38,
        "acceleration": 1,
        "terminal_velocity": 32,
+       "pad": [
+        2,
+        3,
+        0,
+        3
+       ],
        "image": "penguins/Sonic_the_Hedgehog/sonic_runner.png"
       },
       "climber": {
@@ -913,6 +1285,12 @@ export const MANIFEST = {
        "loop": 2,
        "width": 38,
        "height": 38,
+       "pad": [
+        1,
+        0,
+        0,
+        0
+       ],
        "image": "penguins/Sonic_the_Hedgehog/sonic_climber.png"
       },
       "explosion": {
@@ -922,6 +1300,12 @@ export const MANIFEST = {
        "loop": 2,
        "width": 64,
        "height": 64,
+       "pad": [
+        1,
+        0,
+        0,
+        0
+       ],
        "image": "penguins/Sonic_the_Hedgehog/bomb2.png"
       }
      }
@@ -937,6 +1321,12 @@ export const MANIFEST = {
        "loop": 2,
        "width": 44,
        "height": 33,
+       "pad": [
+        1,
+        0,
+        0,
+        0
+       ],
        "image": "penguins/Sonic_the_Hedgehog/twotails_walker.png"
       },
       "faller": {
@@ -948,6 +1338,12 @@ export const MANIFEST = {
        "height": 33,
        "terminal_velocity": 12,
        "acceleration": 1,
+       "pad": [
+        1,
+        0,
+        0,
+        0
+       ],
        "image": "penguins/Sonic_the_Hedgehog/twotails_walker.png"
       },
       "runner": {
@@ -959,6 +1355,12 @@ export const MANIFEST = {
        "height": 33,
        "acceleration": 1,
        "terminal_velocity": 24,
+       "pad": [
+        0,
+        3,
+        1,
+        3
+       ],
        "image": "penguins/Sonic_the_Hedgehog/twotails_runner.png"
       },
       "floater": {
@@ -968,6 +1370,12 @@ export const MANIFEST = {
        "loop": 2,
        "width": 44,
        "height": 33,
+       "pad": [
+        0,
+        3,
+        1,
+        3
+       ],
        "image": "penguins/Sonic_the_Hedgehog/twotails_runner.png"
       },
       "explosion": {
@@ -997,6 +1405,12 @@ export const MANIFEST = {
        "frames": 21,
        "width": 46,
        "height": 48,
+       "pad": [
+        2,
+        7,
+        0,
+        7
+       ],
        "image": "penguins/The_Simpsons/bart_whistler.png"
       },
       "runner": {
@@ -1017,6 +1431,12 @@ export const MANIFEST = {
        "frames": 8,
        "width": 46,
        "height": 48,
+       "pad": [
+        1,
+        3,
+        0,
+        3
+       ],
        "image": "penguins/The_Simpsons/bart_man.png"
       },
       "floater": {
@@ -1026,6 +1446,12 @@ export const MANIFEST = {
        "frames": 8,
        "width": 46,
        "height": 48,
+       "pad": [
+        1,
+        3,
+        0,
+        3
+       ],
        "image": "penguins/The_Simpsons/bart_man.png"
       },
       "explosion": {
@@ -1035,6 +1461,12 @@ export const MANIFEST = {
        "frames": 3,
        "width": 37,
        "height": 52,
+       "pad": [
+        1,
+        0,
+        0,
+        0
+       ],
        "image": "penguins/The_Simpsons/bart_shock.png"
       },
       "action0": {
@@ -1062,6 +1494,12 @@ export const MANIFEST = {
        "frames": 20,
        "width": 30,
        "height": 48,
+       "pad": [
+        1,
+        0,
+        0,
+        0
+       ],
        "image": "penguins/The_Simpsons/bart_face.png"
       },
       "action3": {
@@ -1115,6 +1553,12 @@ export const MANIFEST = {
        "frames": 10,
        "width": 26,
        "height": 43,
+       "pad": [
+        1,
+        0,
+        0,
+        0
+       ],
        "image": "penguins/The_Simpsons/lisa_laugh.png"
       },
       "explosion": {
@@ -1124,6 +1568,12 @@ export const MANIFEST = {
        "frames": 3,
        "width": 34,
        "height": 46,
+       "pad": [
+        1,
+        0,
+        0,
+        3
+       ],
        "image": "penguins/The_Simpsons/lisa_shock.png"
       },
       "action1": {
@@ -1142,6 +1592,12 @@ export const MANIFEST = {
        "frames": 6,
        "width": 31,
        "height": 39,
+       "pad": [
+        1,
+        0,
+        0,
+        1
+       ],
        "image": "penguins/The_Simpsons/lisa_solo.png"
       }
      }
@@ -1164,6 +1620,12 @@ export const MANIFEST = {
        "loop": 4,
        "width": 49,
        "height": 63,
+       "pad": [
+        0,
+        3,
+        0,
+        3
+       ],
        "image": "penguins/Winnie_the_Pooh/pooh_walker.png"
       },
       "faller": {
@@ -1175,6 +1637,12 @@ export const MANIFEST = {
        "loop": 4,
        "width": 49,
        "height": 54,
+       "pad": [
+        0,
+        5,
+        0,
+        5
+       ],
        "image": "penguins/Winnie_the_Pooh/pooh_faller.png"
       },
       "floater": {
@@ -1208,6 +1676,12 @@ export const MANIFEST = {
        "loop": 4,
        "width": 64,
        "height": 64,
+       "pad": [
+        0,
+        0,
+        0,
+        3
+       ],
        "image": "penguins/Winnie_the_Pooh/pooh_explosion.png"
       }
      }
@@ -1237,6 +1711,12 @@ export const MANIFEST = {
        "speed": 1,
        "directions": 2,
        "frames": 15,
+       "pad": [
+        2,
+        0,
+        0,
+        0
+       ],
        "image": "penguins/Worms/walker.png"
       },
       "tumbler": {
@@ -1247,6 +1727,12 @@ export const MANIFEST = {
        "frames": 2,
        "terminal_velocity": 10,
        "acceleration": 1,
+       "pad": [
+        0,
+        5,
+        0,
+        5
+       ],
        "image": "penguins/Worms/tumbler.png"
       },
       "climber": {
@@ -1255,6 +1741,12 @@ export const MANIFEST = {
        "speed": 1,
        "directions": 2,
        "frames": 15,
+       "pad": [
+        1,
+        0,
+        3,
+        0
+       ],
        "image": "penguins/Worms/climber.png"
       },
       "explosion": {
@@ -1272,6 +1764,12 @@ export const MANIFEST = {
        "speed": 3,
        "directions": 2,
        "frames": 6,
+       "pad": [
+        0,
+        1,
+        0,
+        1
+       ],
        "image": "penguins/Worms/floater.png"
       },
       "action0": {
@@ -1299,6 +1797,12 @@ export const MANIFEST = {
        "directions": 2,
        "frames": 16,
        "loop": 1,
+       "pad": [
+        4,
+        3,
+        0,
+        3
+       ],
        "image": "penguins/Worms/nervous.png"
       },
       "action3": {
@@ -1332,6 +1836,12 @@ export const MANIFEST = {
        "speed": 5,
        "directions": 2,
        "frames": 8,
+       "pad": [
+        19,
+        5,
+        0,
+        5
+       ],
        "image": "penguins/Worms/sheep_walker.png"
       },
       "climber": {
@@ -1340,6 +1850,12 @@ export const MANIFEST = {
        "speed": 5,
        "directions": 2,
        "frames": 8,
+       "pad": [
+        7,
+        0,
+        4,
+        0
+       ],
        "image": "penguins/Worms/sheep_climber.png"
       },
       "explosion": {

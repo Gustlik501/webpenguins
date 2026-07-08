@@ -44,6 +44,7 @@ export class Renderer {
     ctx.imageSmoothingEnabled = false;
   }
 
+  /** (x, y) is the toon's collision box origin; the cell draws around it. */
   drawSprite(anim: AnimData, frame: number, direction: number, x: number, y: number): void {
     const dir = Math.min(direction, anim.directions - 1);
     this.ctx.drawImage(
@@ -52,10 +53,10 @@ export class Renderer {
       dir * anim.srcHeight,
       anim.srcWidth,
       anim.srcHeight,
-      Math.round(x),
-      Math.round(y),
-      anim.width,
-      anim.height
+      Math.round(x - anim.drawDX),
+      Math.round(y - anim.drawDY),
+      anim.drawW,
+      anim.drawH
     );
   }
 

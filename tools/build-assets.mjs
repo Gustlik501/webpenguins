@@ -23,6 +23,40 @@ fs.mkdirSync(path.join(root, "src", "generated"), { recursive: true });
 
 const images = {}; // key relative to assets/ -> { png: Buffer, width, height }
 
+/**
+ * Union content bounds across every frame cell of a sheet, as [top, right,
+ * bottom, left] transparent padding — or null when the art fills the cell.
+ * Many sheets centre the art in its cell (the Turtles walker leaves 6 empty
+ * rows at the bottom); collision must follow the pixels, not the cell.
+ */
+function contentPad(img, cw, ch, frames, dirs) {
+  let top = ch;
+  let bottom = -1;
+  let left = cw;
+  let right = -1;
+  for (let d = 0; d < dirs; d++) {
+    for (let f = 0; f < frames; f++) {
+      for (let y = 0; y < ch; y++) {
+        const gy = d * ch + y;
+        if (gy >= img.height) continue;
+        for (let x = 0; x < cw; x++) {
+          const gx = f * cw + x;
+          if (gx >= img.width) continue;
+          if (img.rgba[(gy * img.width + gx) * 4 + 3] > 0) {
+            if (y < top) top = y;
+            if (y > bottom) bottom = y;
+            if (x < left) left = x;
+            if (x > right) right = x;
+          }
+        }
+      }
+    }
+  }
+  if (bottom < 0) return null; // blank sheet?! leave the cell as-is
+  const pad = [top, cw - 1 - right, ch - 1 - bottom, left];
+  return pad.some((p) => p > 0) ? pad : null;
+}
+
 function convert(xpmPath, outDir, outName) {
   const img = parseXpm(fs.readFileSync(xpmPath, "latin1"), path.basename(xpmPath));
   const png = encodePng(img.width, img.height, img.rgba);
@@ -59,14 +93,15 @@ for (const { themesRoot, dirName } of themeDirs) {
   const outDir = path.join(OUT_PENGUINS, dirName);
   fs.mkdirSync(outDir, { recursive: true });
 
-  const converted = new Set();
+  const converted = new Map(); // pngName -> parsed image
   for (const genus of theme.genera) {
     if (genus.name === "toon") genus.name = displayName; // anonymous genus
     for (const [animName, anim] of Object.entries(genus.anims)) {
       const pngName = anim.pixmap.replace(/\.xpm$/, ".png");
-      if (!converted.has(pngName)) {
-        const img = convert(path.join(themeDir, anim.pixmap), outDir, pngName);
-        converted.add(pngName);
+      let img = converted.get(pngName);
+      if (!img) {
+        img = convert(path.join(themeDir, anim.pixmap), outDir, pngName);
+        converted.set(pngName, img);
         // Sanity check: sheet must be frames wide x directions tall.
         const expectW = (anim.frames ?? 8) * (anim.width ?? 30);
         const expectH = (anim.directions ?? 1) * (anim.height ?? 30);
@@ -76,6 +111,14 @@ for (const { themesRoot, dirName } of themeDirs) {
           );
         }
       }
+      const pad = contentPad(
+        img,
+        anim.width ?? 30,
+        anim.height ?? 30,
+        anim.frames ?? 8,
+        anim.directions ?? 1
+      );
+      if (pad) anim.pad = pad;
       anim.image = `penguins/${dirName}/${pngName}`;
       delete anim.pixmap;
     }
