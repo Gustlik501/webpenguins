@@ -152,8 +152,12 @@ function hasVisibleBorder(st: CSSStyleDeclaration): boolean {
 export class Surfaces {
   private surfaces: Surface[] = [];
   private generation = 0;
+  // debug instrumentation
+  scanCount = 0;
+  rescheduleCount = 0;
   private lastTickGeneration = -1;
   private rescanTimer: ReturnType<typeof setTimeout> | undefined;
+  private rescanDue = Infinity;
   private intervalTimer: ReturnType<typeof setInterval> | undefined;
   private observer: MutationObserver | undefined;
   private listeners: Array<() => void> = [];
@@ -166,9 +170,10 @@ export class Surfaces {
   // user overrides (dev mode / options): CSS selectors, joined for matches()
   private solidJoined = "";
   private ignoreJoined = "";
+  private pixelJoined = "";
 
-  /** Set the user's solid/ignore selector overrides and rescan. */
-  setOverrides(solid: string[], ignore: string[]): void {
+  /** Set the user's solid/ignore/pixel selector overrides and rescan. */
+  setOverrides(solid: string[], ignore: string[], pixel: string[]): void {
     const valid = (list: string[]) =>
       list.filter((sel) => {
         try {
@@ -181,12 +186,14 @@ export class Surfaces {
       });
     this.solidJoined = valid(solid).join(", ");
     this.ignoreJoined = valid(ignore).join(", ");
+    this.pixelJoined = valid(pixel).join(", ");
     this.scan();
   }
 
   /** The effective hint: user overrides beat the page's data attributes. */
   private hintFor(el: Element): string | null {
     if (this.ignoreJoined && el.matches(this.ignoreJoined)) return "ignore";
+    if (this.pixelJoined && el.matches(this.pixelJoined)) return "pixel";
     if (this.solidJoined && el.matches(this.solidJoined)) return "solid";
     return el.getAttribute("data-webpenguins");
   }
@@ -240,8 +247,19 @@ export class Surfaces {
   }
 
   private scheduleRescan(delay: number): void {
+    this.rescheduleCount++;
+    // Coalesce to the EARLIEST pending deadline. Resetting the timer on
+    // every call starves the scan on pages that mutate the DOM every frame
+    // (tickers, re-renders): the debounce never fires.
+    const due = performance.now() + delay;
+    if (this.rescanTimer !== undefined && this.rescanDue <= due) return;
     clearTimeout(this.rescanTimer);
-    this.rescanTimer = setTimeout(() => this.scan(), delay);
+    this.rescanDue = due;
+    this.rescanTimer = setTimeout(() => {
+      this.rescanTimer = undefined;
+      this.rescanDue = Infinity;
+      this.scan();
+    }, delay);
   }
 
   /** The effective background color behind an element (or "complex"). */
@@ -378,6 +396,7 @@ export class Surfaces {
 
   scan(): void {
     if (!document.body) return;
+    this.scanCount++;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const sx = window.scrollX;
@@ -399,7 +418,8 @@ export class Surfaces {
       if (hint === "ignore") continue;
 
       const rect = el.getBoundingClientRect();
-      if (hint === "solid") {
+      const forced = hint === "solid" || hint === "pixel";
+      if (forced) {
         // The user explicitly forced this element: only reject degenerates.
         if (rect.width < 4 || rect.height < 4) continue;
       } else {
@@ -429,7 +449,7 @@ export class Surfaces {
       }
 
       let box: Box = { x: rect.left, y: rect.top, w: rect.width, h: rect.height };
-      let solid = hint === "solid" || this.paints(el, st);
+      let solid = forced || this.paints(el, st);
 
       // Bare headings: collide with the text's ink box, not the layout box.
       if (!solid && HEADINGS.has(tag)) {
@@ -452,12 +472,17 @@ export class Surfaces {
       box = clipped;
 
       // Pixel-shaped collision for images/canvases: the alpha channel is
-      // the collision shape (the web's X11 SHAPE extension).
+      // the collision shape (the web's X11 SHAPE extension). "pixel"-forced
+      // elements get rasterized whatever they are (text, gradients, bg
+      // images) and collide with their drawn pixels.
       let mask: PixelMask | undefined;
       let maskDX = 0;
       let maskDY = 0;
-      if (MASKABLE.has(tag) && hint !== "solid") {
-        const info = this.masks.lookup(el, rect.width, rect.height);
+      if (hint === "pixel" || (MASKABLE.has(tag) && hint !== "solid")) {
+        const info =
+          hint === "pixel"
+            ? this.masks.lookupForced(el, rect.width, rect.height)
+            : this.masks.lookup(el, rect.width, rect.height);
         if (info.status === "empty") continue; // fully transparent: not solid
         if (info.status === "masked") {
           mask = info.mask;
@@ -579,7 +604,8 @@ export class Surfaces {
     if (NEVER_SOLID.has(tag)) return fail("this tag is never solid");
     const hint = this.hintFor(el);
     if (hint === "ignore") return fail("ignored (override selector or data-webpenguins)");
-    if (hint !== "solid") {
+    if (hint === "pixel") out.note = "forced pixel-perfect: collides with its rasterized pixels";
+    if (hint !== "solid" && hint !== "pixel") {
       if (rect.width < MIN_WIDTH || rect.height < (tag === "HR" ? 1 : MIN_HEIGHT)) {
         return fail(`too small (needs ${MIN_WIDTH}x${MIN_HEIGHT})`);
       }
@@ -600,8 +626,8 @@ export class Surfaces {
     out.pageCanvas = this.pageCanvas;
     out.backdrop = this.backdropOf(el);
     out.background = st.backgroundColor;
-    const paints = hint === "solid" || this.paints(el, st);
-    out.paints = hint === "solid" ? "forced by data-webpenguins" : paints;
+    const paints = hint === "solid" || hint === "pixel" || this.paints(el, st);
+    out.paints = hint === "solid" || hint === "pixel" ? "forced" : paints;
     if (!paints && HEADINGS.has(tag)) out.note = "heading: would collide via its text ink box";
     else if (!paints) {
       return fail(
@@ -616,8 +642,11 @@ export class Surfaces {
       h: rect.height,
     });
     if (!clipped) return fail("fully clipped by an overflow ancestor");
-    if (MASKABLE.has(tag) && hint !== "solid") {
-      out.mask = this.masks.lookup(el, rect.width, rect.height).status;
+    if (hint === "pixel" || (MASKABLE.has(tag) && hint !== "solid")) {
+      out.mask =
+        hint === "pixel"
+          ? this.masks.lookupForced(el, rect.width, rect.height).status
+          : this.masks.lookup(el, rect.width, rect.height).status;
       if (out.mask === "empty") return fail("mask: fully transparent content");
     }
     if (this.occluded(el, clipped)) return fail("top edge covered by another painting element");

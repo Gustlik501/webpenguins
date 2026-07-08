@@ -304,6 +304,28 @@ function buildFromSvgVector(svg: SVGSVGElement, w: number, h: number): MaskResul
   }
 }
 
+// ------------------------------------------------- arbitrary elements
+// Forced pixel-perfect collision for ANY element (dev mode's shift-click):
+// the element is rasterized via SVG <foreignObject> with its computed
+// styles inlined — text glyphs, gradients and (CORS-permitting) background
+// images all become collision shape. The html2canvas trick, minus the kilo
+// of dependencies.
+
+const URL_RE = /url\((['"]?)([^)'"]+)\1\)/g;
+
+function styleText(cs: CSSStyleDeclaration, inline: (u: string) => string): string {
+  let out = "";
+  for (let i = 0; i < cs.length; i++) {
+    const prop = cs[i];
+    let v = cs.getPropertyValue(prop);
+    if (v.includes("url(")) {
+      v = v.replace(URL_RE, (_m, _q, u: string) => `url("${inline(u)}")`);
+    }
+    out += `${prop}:${v};`;
+  }
+  return out;
+}
+
 /**
  * Caches masks per element and drawn size; retries tainted cross-origin
  * images via a crossOrigin="anonymous" reload (works when the server sends
@@ -313,8 +335,138 @@ export class MaskRegistry {
   private cache = new WeakMap<Element, { w: number; h: number; result: MaskResult }>();
   private corsImages = new Map<string, HTMLImageElement | "pending" | "failed">();
   private svgRasters = new WeakMap<Element, HTMLImageElement | "pending" | "failed">();
+  // forced pixel-perfect rasterization
+  private rasters = new WeakMap<
+    Element,
+    { img: HTMLImageElement; w: number; h: number } | "pending" | "failed"
+  >();
+  private inlined = new Map<string, string | "pending" | "failed">();
 
   constructor(private onUpdate: () => void) {}
+
+  /**
+   * Pixel-perfect collision for an arbitrary element. Replaced content uses
+   * its native alpha path; everything else is rasterized (foreignObject).
+   */
+  lookupForced(el: Element, w: number, h: number): MaskResult {
+    const tag = el.tagName.toUpperCase();
+    if (tag === "IMG" || tag === "CANVAS" || tag === "SVG") return this.lookup(el, w, h);
+    w = Math.round(w);
+    h = Math.round(h);
+    const cached = this.cache.get(el);
+    if (cached && cached.w === w && cached.h === h) return cached.result;
+    const raster = this.elementRaster(el, w, h);
+    if (raster === "pending") return { status: "pending" }; // uncached: retry next scan
+    let result: MaskResult = raster === "failed" ? { status: "opaque" } : buildMask(raster, w, h);
+    if (result.status === "failed") result = { status: "opaque" };
+    this.cache.set(el, { w, h, result });
+    return result;
+  }
+
+  private elementRaster(el: Element, w: number, h: number): HTMLImageElement | "pending" | "failed" {
+    const got = this.rasters.get(el);
+    if (got === "pending" || got === "failed") return got;
+    if (got && Math.abs(got.w - w) <= 2 && Math.abs(got.h - h) <= 2) return got.img;
+    if (w > 1600 || h > 1600) return "failed";
+
+    const origs: Element[] = [el, ...Array.from(el.querySelectorAll("*"))];
+    if (origs.length > 300) {
+      this.rasters.set(el, "failed");
+      return "failed";
+    }
+    // Inline every referenced image first (they can't load inside a data:
+    // SVG); wait for the fetches before rasterizing.
+    const urls = new Set<string>();
+    for (const node of origs) {
+      if (node.tagName === "IMG") {
+        const src = (node as HTMLImageElement).currentSrc || (node as HTMLImageElement).src;
+        if (src && !src.startsWith("data:")) urls.add(src);
+      }
+      const bg = getComputedStyle(node).backgroundImage;
+      if (bg && bg !== "none") {
+        for (const m of bg.matchAll(URL_RE)) {
+          if (!m[2].startsWith("data:")) urls.add(m[2]);
+        }
+      }
+    }
+    let pending = false;
+    const resolved = new Map<string, string>();
+    for (const u of urls) {
+      const r = this.inlineFetch(u);
+      if (r === "pending") pending = true;
+      else if (r !== "failed") resolved.set(u, r);
+    }
+    if (pending) return "pending"; // not cached — retried when fetches land
+
+    let markup: string;
+    try {
+      const clone = el.cloneNode(true) as Element;
+      const copies: Element[] = [clone, ...Array.from(clone.querySelectorAll("*"))];
+      const inline = (u: string) => resolved.get(u) ?? u;
+      for (let i = 0; i < origs.length && i < copies.length; i++) {
+        let css = styleText(getComputedStyle(origs[i]), inline);
+        // The root renders at the foreignObject origin, not where the
+        // page put it.
+        if (i === 0) css += "margin:0;position:static;inset:auto;transform:none;";
+        copies[i].setAttribute("style", css);
+        if (copies[i].tagName === "IMG") {
+          const src = (origs[i] as HTMLImageElement).currentSrc || (origs[i] as HTMLImageElement).src;
+          const data = src.startsWith("data:") ? src : resolved.get(src);
+          if (data) copies[i].setAttribute("src", data);
+          else copies[i].removeAttribute("src");
+          copies[i].removeAttribute("srcset");
+        }
+      }
+      markup =
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.round(w)}" height="${Math.round(h)}">` +
+        `<foreignObject width="100%" height="100%">` +
+        new XMLSerializer().serializeToString(clone) +
+        `</foreignObject></svg>`;
+    } catch {
+      this.rasters.set(el, "failed");
+      return "failed";
+    }
+
+    const img = new Image();
+    img.onload = () => {
+      this.rasters.set(el, { img, w, h });
+      this.onUpdate();
+    };
+    img.onerror = () => {
+      this.rasters.set(el, "failed");
+      this.onUpdate();
+    };
+    img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(markup);
+    this.rasters.set(el, "pending");
+    return "pending";
+  }
+
+  /** Fetch an image and re-encode it as a data URI (CORS permitting). */
+  private inlineFetch(url: string): string | "pending" | "failed" {
+    const got = this.inlined.get(url);
+    if (got) return got;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const c = document.createElement("canvas");
+        c.width = Math.min(img.naturalWidth, 2000);
+        c.height = Math.min(img.naturalHeight, 2000);
+        c.getContext("2d")!.drawImage(img, 0, 0);
+        this.inlined.set(url, c.toDataURL());
+      } catch {
+        this.inlined.set(url, "failed");
+      }
+      this.onUpdate();
+    };
+    img.onerror = () => {
+      this.inlined.set(url, "failed");
+      this.onUpdate();
+    };
+    img.src = url;
+    this.inlined.set(url, "pending");
+    return "pending";
+  }
 
   lookup(el: Element, w: number, h: number): MaskResult {
     w = Math.round(w);

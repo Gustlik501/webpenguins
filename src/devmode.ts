@@ -9,6 +9,8 @@ import { World } from "./world";
 export interface Overrides {
   solid: string[];
   ignore: string[];
+  /** Selectors whose elements collide with their rasterized pixels. */
+  pixel: string[];
 }
 
 export interface DevHost {
@@ -34,6 +36,7 @@ interface Box {
 const COLOR_SOLID = "34, 197, 94"; // green: collidable
 const COLOR_FORCED = "56, 189, 248"; // cyan: forced solid
 const COLOR_IGNORED = "248, 113, 113"; // red: forced ignore
+const COLOR_PIXEL = "192, 132, 252"; // violet: forced pixel-perfect
 
 /** A short, human-readable selector for an element (id > classes > path). */
 export function selectorFor(el: Element): string {
@@ -52,7 +55,12 @@ export class DevMode {
   private snippetInput: HTMLInputElement;
   private stats: HTMLDivElement;
   private hovered: Element | null = null;
-  private markCache: { t: number; solid: Box[]; ignore: Box[] } = { t: 0, solid: [], ignore: [] };
+  private markCache: { t: number; solid: Box[]; ignore: Box[]; pixel: Box[] } = {
+    t: 0,
+    solid: [],
+    ignore: [],
+    pixel: [],
+  };
   private maskTints = new WeakMap<PixelMask, HTMLCanvasElement>();
   private listeners: Array<() => void> = [];
 
@@ -72,7 +80,8 @@ export class DevMode {
       '<div style="opacity:.8;margin:4px 0 8px">Click an element to cycle ' +
       '<span style="color:rgb(52,211,153)">auto</span> → ' +
       '<span style="color:rgb(56,189,248)">solid</span> / ' +
-      '<span style="color:rgb(248,113,113)">ignored</span>. Esc exits.</div>' +
+      '<span style="color:rgb(248,113,113)">ignored</span>. ' +
+      'Shift+click: <span style="color:rgb(192,132,252)">pixel-perfect</span>. Esc exits.</div>' +
       '<div style="display:flex;gap:6px;margin-bottom:8px">' +
       '<input data-wp-snippet readonly style="flex:1;min-width:0;background:#0b1220;color:#9fc0e8;' +
       'border:1px solid #2b3b52;border-radius:6px;padding:4px 6px;font:11px ui-monospace,monospace">' +
@@ -101,7 +110,7 @@ export class DevMode {
       }
     });
     this.panel.querySelector("[data-wp-clear]")!.addEventListener("click", () => {
-      this.host.setOverrides({ solid: [], ignore: [] });
+      this.host.setOverrides({ solid: [], ignore: [], pixel: [] });
       this.refresh();
     });
     this.panel.querySelector("[data-wp-exit]")!.addEventListener("click", () => this.host.exit());
@@ -124,7 +133,9 @@ export class DevMode {
       e.preventDefault();
       e.stopImmediatePropagation();
       if (t === document.documentElement || t === document.body) return;
-      this.cycle(this.host.surfaceContaining(t) ?? t);
+      const target = this.host.surfaceContaining(t) ?? t;
+      if (e.shiftKey) this.togglePixel(target);
+      else this.cycle(target);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") this.host.exit();
@@ -146,15 +157,32 @@ export class DevMode {
     const o = this.host.getOverrides();
     const inSolid = o.solid.includes(sel);
     const inIgnore = o.ignore.includes(sel);
+    const inPixel = o.pixel.includes(sel);
     o.solid = o.solid.filter((x) => x !== sel);
     o.ignore = o.ignore.filter((x) => x !== sel);
-    if (inSolid) {
+    o.pixel = o.pixel.filter((x) => x !== sel);
+    if (inPixel || inIgnore) {
+      // back to auto
+    } else if (inSolid) {
       o.ignore.push(sel);
-    } else if (!inIgnore) {
+    } else {
       // from auto: force the opposite of what the scanner decided
       if (this.host.surfaceContaining(el)) o.ignore.push(sel);
       else o.solid.push(sel);
-    } // from ignore: back to auto
+    }
+    this.host.setOverrides(o);
+    this.refresh();
+  }
+
+  /** Shift+click: toggle pixel-perfect collision for the element. */
+  private togglePixel(el: Element): void {
+    const sel = selectorFor(el);
+    const o = this.host.getOverrides();
+    const on = o.pixel.includes(sel);
+    o.solid = o.solid.filter((x) => x !== sel);
+    o.ignore = o.ignore.filter((x) => x !== sel);
+    o.pixel = o.pixel.filter((x) => x !== sel);
+    if (!on) o.pixel.push(sel);
     this.host.setOverrides(o);
     this.refresh();
   }
@@ -164,7 +192,7 @@ export class DevMode {
     const o = this.host.getOverrides();
     this.stats.textContent =
       `${this.host.world.rects.length} collidable surfaces · ` +
-      `${o.solid.length} forced solid · ${o.ignore.length} ignored`;
+      `${o.solid.length} forced solid · ${o.ignore.length} ignored · ${o.pixel.length} pixel`;
     this.snippetInput.value = this.host.buildSnippet();
     this.markCache.t = 0; // recollect override boxes
   }
@@ -192,7 +220,12 @@ export class DevMode {
       return out;
     };
     const o = this.host.getOverrides();
-    this.markCache = { t: now, solid: collect(o.solid), ignore: collect(o.ignore) };
+    this.markCache = {
+      t: now,
+      solid: collect(o.solid),
+      ignore: collect(o.ignore),
+      pixel: collect(o.pixel),
+    };
   }
 
   private maskTint(mask: PixelMask): HTMLCanvasElement {
@@ -278,6 +311,7 @@ export class DevMode {
     };
     outline(this.markCache.solid, COLOR_FORCED);
     outline(this.markCache.ignore, COLOR_IGNORED);
+    outline(this.markCache.pixel, COLOR_PIXEL);
 
     // hover: what a click would toggle, and what it currently is
     const hov = this.hovered;
@@ -290,13 +324,15 @@ export class DevMode {
       ctx.setLineDash([]);
       const sel = selectorFor(target);
       const o = this.host.getOverrides();
-      const state = o.solid.includes(sel)
-        ? "forced solid"
-        : o.ignore.includes(sel)
-          ? "ignored"
-          : this.host.surfaceContaining(hov)
-            ? "auto: solid"
-            : "auto: not solid";
+      const state = o.pixel.includes(sel)
+        ? "pixel-perfect"
+        : o.solid.includes(sel)
+          ? "forced solid"
+          : o.ignore.includes(sel)
+            ? "ignored"
+            : this.host.surfaceContaining(hov)
+              ? "auto: solid"
+              : "auto: not solid";
       const label = `${sel} — ${state}`;
       ctx.font = "11px ui-monospace, SFMono-Regular, monospace";
       const tw = ctx.measureText(label).width;

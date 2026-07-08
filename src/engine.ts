@@ -53,7 +53,7 @@ export class Engine {
   private scale = 1;
   private delay = 60; // ms per tick, set by the theme (Bill runs at 150)
   private dev: DevMode | undefined;
-  private overrides: Overrides = { solid: [], ignore: [] };
+  private overrides: Overrides = { solid: [], ignore: [], pixel: [] };
   // debug instrumentation (exposed via the `debug` option)
   loopCount = 0;
   tickCount = 0;
@@ -86,8 +86,12 @@ export class Engine {
 
     // Surfaces must exist before anyone spawns — the spawn-safety check
     // needs a populated world or penguins materialise inside cards.
-    this.overrides = { solid: parseList(opts.solid), ignore: parseList(opts.ignore) };
-    this.surfaces.setOverrides(this.overrides.solid, this.overrides.ignore);
+    this.overrides = {
+      solid: parseList(opts.solid),
+      ignore: parseList(opts.ignore),
+      pixel: parseList(opts.pixel),
+    };
+    this.surfaces.setOverrides(this.overrides.solid, this.overrides.ignore, this.overrides.pixel);
     this.surfaces.start();
     this.world.setRects(this.surfaces.getRects());
 
@@ -160,7 +164,11 @@ export class Engine {
       this.dev = new DevMode({
         world: this.world,
         surfaceContaining: (el) => this.surfaces.surfaceContaining(el),
-        getOverrides: () => ({ solid: [...this.overrides.solid], ignore: [...this.overrides.ignore] }),
+        getOverrides: () => ({
+          solid: [...this.overrides.solid],
+          ignore: [...this.overrides.ignore],
+          pixel: [...this.overrides.pixel],
+        }),
         setOverrides: (o) => this.applyOverrides(o, true),
         buildSnippet: () => this.buildSnippet(),
         exit: () => {
@@ -175,10 +183,14 @@ export class Engine {
   }
 
   private applyOverrides(o: Overrides, persist: boolean): void {
-    this.overrides = { solid: o.solid, ignore: o.ignore };
-    this.surfaces.setOverrides(o.solid, o.ignore);
+    this.overrides = { solid: o.solid, ignore: o.ignore, pixel: o.pixel };
+    this.surfaces.setOverrides(o.solid, o.ignore, o.pixel);
     if (persist) {
-      this.opts.onOverridesChange?.({ solid: [...o.solid], ignore: [...o.ignore] });
+      this.opts.onOverridesChange?.({
+        solid: [...o.solid],
+        ignore: [...o.ignore],
+        pixel: [...o.pixel],
+      });
     }
     this.dev?.refresh();
   }
@@ -201,6 +213,7 @@ export class Engine {
     if (typeof o.scale === "number" && o.scale !== 1) attrs.push(`data-scale="${o.scale}"`);
     if (this.overrides.solid.length) attrs.push(`data-solid="${esc(this.overrides.solid.join("; "))}"`);
     if (this.overrides.ignore.length) attrs.push(`data-ignore="${esc(this.overrides.ignore.join("; "))}"`);
+    if (this.overrides.pixel.length) attrs.push(`data-pixel="${esc(this.overrides.pixel.join("; "))}"`);
     return `<script ${attrs.join(" ")}></script>`;
   }
 
@@ -337,11 +350,12 @@ export class Engine {
       if (opts.penguins !== undefined) this.manager.setNumber(opts.penguins);
       if (opts.blood !== undefined) this.manager.blood = opts.blood;
       if (opts.angels !== undefined) this.manager.angels = opts.angels;
-      if (opts.solid !== undefined || opts.ignore !== undefined) {
+      if (opts.solid !== undefined || opts.ignore !== undefined || opts.pixel !== undefined) {
         this.applyOverrides(
           {
             solid: opts.solid !== undefined ? parseList(opts.solid) : this.overrides.solid,
             ignore: opts.ignore !== undefined ? parseList(opts.ignore) : this.overrides.ignore,
+            pixel: opts.pixel !== undefined ? parseList(opts.pixel) : this.overrides.pixel,
           },
           false
         );

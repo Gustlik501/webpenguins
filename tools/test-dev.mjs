@@ -79,8 +79,65 @@ try {
   `);
   console.log("DEV-MODE:", JSON.stringify(dev, null, 1));
 
+  // 3. Pixel-perfect override on a text heading: penguins must collide
+  //    with the glyphs of "Short", not its full-width block box.
+  const pixel = await tab.eval(`
+    (function () {
+      window.flock.destroy();
+      window.flock = WebPenguins.start({ penguins: 2, pixel: ["#inkhead"], debug: true });
+      return new Promise(function (res) {
+        setTimeout(function () {
+          var w = window.__webpenguins.world;
+          var head = document.getElementById("inkhead");
+          var hr = head.getBoundingClientRect();
+          var hx = hr.left + scrollX, hy = hr.top + scrollY;
+          var r = w.rects.filter(function (q) {
+            return q.mask && Math.abs(q.y - hy) < 3 && Math.abs(q.x - hx) < 3;
+          })[0];
+          if (!r) return res({ masked: false });
+          var midY = Math.round(r.y + r.h / 2);
+          var ink = false;
+          for (var x = 0; x < 160; x++) {
+            if (w.intersects(r.x + x, midY, 1, 1)) { ink = true; break; }
+          }
+          var rightSide = false;
+          for (var x2 = Math.round(r.w * 0.6); x2 < r.w; x2 += 4) {
+            if (w.intersects(r.x + x2, midY, 1, 1)) { rightSide = true; break; }
+          }
+          res({ masked: true, rect: r.w + "x" + r.h, glyphInk: ink, rightEmpty: !rightSide });
+        }, 2500);
+      });
+    })()
+  `);
+  console.log("PIXEL-TEXT:", JSON.stringify(pixel));
+
+  // 4. Shift+click in dev mode toggles pixel-perfect and exports data-pixel.
+  const shiftClick = await tab.eval(`
+    (function () {
+      window.flock.destroy();
+      window.flock = WebPenguins.start({ penguins: 2, devMode: true, debug: true });
+      return new Promise(function (res) {
+        setTimeout(function () {
+          var head = document.getElementById("inkhead");
+          head.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, shiftKey: true }));
+          setTimeout(function () {
+            var panel = document.querySelector("[data-webpenguins-devpanel]");
+            var snippet = panel ? panel.querySelector("[data-wp-snippet]").value : "";
+            window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+            res({ snippet: snippet });
+          }, 2000);
+        }, 1200);
+      });
+    })()
+  `);
+  console.log("SHIFT-CLICK:", JSON.stringify(shiftClick));
+
   const ok =
     overrides.cardGone === true &&
+    pixel.masked === true &&
+    pixel.glyphInk === true &&
+    pixel.rightEmpty === true &&
+    /data-pixel="#inkhead"/.test(shiftClick.snippet) &&
     overrides.imgStays === true &&
     overrides.ghostSolid === true &&
     dev.panel === true &&

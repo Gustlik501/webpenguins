@@ -28,13 +28,14 @@
   }
 
   function siteOverrides(s) {
-    return (s.overrides || {})[host] || { solid: [], ignore: [] };
+    var ov = (s.overrides || {})[host] || {};
+    return { solid: ov.solid || [], ignore: ov.ignore || [], pixel: ov.pixel || [] };
   }
 
   function saveOverrides(ov) {
     chrome.storage.sync.get(DEFAULTS, function (cur) {
       var all = cur.overrides || {};
-      if (ov.solid.length || ov.ignore.length) all[host] = ov;
+      if (ov.solid.length || ov.ignore.length || ov.pixel.length) all[host] = ov;
       else delete all[host]; // keep the sync store tidy
       chrome.storage.sync.set({ overrides: all });
     });
@@ -64,7 +65,7 @@
     if (shouldRun(s)) {
       if (flock && core === lastCore) {
         // Only dev mode / overrides changed: update live, no restart.
-        flock.set({ devMode: !!s.devMode, solid: ov.solid, ignore: ov.ignore });
+        flock.set({ devMode: !!s.devMode, solid: ov.solid, ignore: ov.ignore, pixel: ov.pixel });
         return;
       }
       lastCore = core;
@@ -80,6 +81,7 @@
         devMode: !!s.devMode,
         solid: ov.solid,
         ignore: ov.ignore,
+        pixel: ov.pixel,
         onOverridesChange: saveOverrides,
         onDevModeExit: function () {
           chrome.storage.sync.set({ devMode: false });

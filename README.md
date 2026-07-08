@@ -58,7 +58,9 @@ await flock.stop();          // the classic exit: everyone lights a bomb 💣
 
 Page authors can hint the surface scanner:
 `data-webpenguins="solid"` forces an element to be a platform,
-`data-webpenguins="ignore"` excludes it (and its descendants).
+`data-webpenguins="ignore"` excludes it (and its descendants), and
+`data-webpenguins="pixel"` makes it collide with its rendered *pixels*
+(see developer mode below).
 
 ### Developer mode
 
@@ -74,17 +76,23 @@ per-pixel mask shapes of images and logos — the glass floor shows as a
 dashed line, and hovering any element shows its selector and current state.
 **Click an element** to cycle it through *auto → forced solid / ignored →
 auto*; overrides are stored as CSS selectors, so overriding `.card` covers
-every card on the site. The floating panel shows live counts, clears
-overrides, and — the point of it all — **exports a single copyable line**
-like:
+every card on the site. **Shift+click an element to make its collisions
+pixel-perfect**: the engine rasterizes it — computed styles inlined into an
+SVG `foreignObject`, background images fetched and embedded (CORS
+permitting) — and penguins collide with its rendered pixels instead of its
+box. Works on headlines (they walk on the glyphs), gradient shapes and CSS
+background-image logos; images, canvases and inline SVGs already get this
+automatically from their alpha channel. The floating panel shows live
+counts, clears overrides, and — the point of it all — **exports a single
+copyable line** like:
 
 ```html
-<script src="webpenguins.js" data-auto data-penguins="12" data-theme="Turtles" data-solid=".hero; #logo" data-ignore=".ad-banner"></script>
+<script src="webpenguins.js" data-auto data-penguins="12" data-theme="Turtles" data-solid=".hero" data-ignore=".ad-banner" data-pixel="h1.title"></script>
 ```
 
 Drop that next to a hosted copy of `webpenguins.js` and the site runs with
 exactly what you configured. The same overrides work programmatically:
-`WebPenguins.start({ solid: [".hero"], ignore: [".ad-banner"] })`.
+`WebPenguins.start({ solid: [".hero"], ignore: [".ad-banner"], pixel: ["h1.title"] })`.
 
 In the extension, toggle *Developer mode* in the popup — overrides are
 saved per site (`storage.sync`) and re-applied on every visit.

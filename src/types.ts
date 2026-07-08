@@ -168,8 +168,14 @@ export interface WebPenguinsOptions {
   solid?: string | string[];
   /** CSS selectors never solid — a list or a ";"-joined string. */
   ignore?: string | string[];
+  /**
+   * CSS selectors whose elements collide with their rasterized *pixels* —
+   * text glyphs, gradients, CSS background images. Images/canvases/inline
+   * SVGs already do this automatically via their alpha channel.
+   */
+  pixel?: string | string[];
   /** Dev mode edited the overrides — persist them (e.g. per-site storage). */
-  onOverridesChange?: (overrides: { solid: string[]; ignore: string[] }) => void;
+  onOverridesChange?: (overrides: { solid: string[]; ignore: string[]; pixel: string[] }) => void;
   /** The user exited dev mode via Esc or the panel button. */
   onDevModeExit?: () => void;
 }
