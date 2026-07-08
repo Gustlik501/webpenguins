@@ -17,6 +17,8 @@ export interface DevHost {
   world: World;
   /** The accepted surface element containing `el`, if any. */
   surfaceContaining(el: Element): Element | null;
+  /** Does this accepted surface already collide via a pixel mask? */
+  surfaceMasked(el: Element): boolean;
   getOverrides(): Overrides;
   /** Apply + persist new overrides (triggers a rescan). */
   setOverrides(o: Overrides): void;
@@ -55,6 +57,7 @@ export class DevMode {
   private snippetInput: HTMLInputElement;
   private stats: HTMLDivElement;
   private hovered: Element | null = null;
+  private shiftHeld = false;
   private markCache: { t: number; solid: Box[]; ignore: Box[]; pixel: Box[] } = {
     t: 0,
     solid: [],
@@ -81,7 +84,8 @@ export class DevMode {
       '<span style="color:rgb(52,211,153)">auto</span> → ' +
       '<span style="color:rgb(56,189,248)">solid</span> / ' +
       '<span style="color:rgb(248,113,113)">ignored</span>. ' +
-      'Shift+click: <span style="color:rgb(192,132,252)">pixel-perfect</span>. Esc exits.</div>' +
+      'Shift+click: <span style="color:rgb(192,132,252)">pixel-perfect</span> ' +
+      "(shift picks the exact element under the cursor). Esc exits.</div>" +
       '<div style="display:flex;gap:6px;margin-bottom:8px">' +
       '<input data-wp-snippet readonly style="flex:1;min-width:0;background:#0b1220;color:#9fc0e8;' +
       'border:1px solid #2b3b52;border-radius:6px;padding:4px 6px;font:11px ui-monospace,monospace">' +
@@ -116,6 +120,7 @@ export class DevMode {
     this.panel.querySelector("[data-wp-exit]")!.addEventListener("click", () => this.host.exit());
 
     const onMove = (e: MouseEvent) => {
+      this.shiftHeld = e.shiftKey;
       const t = e.target as Element | null;
       this.hovered =
         !t ||
@@ -133,20 +138,27 @@ export class DevMode {
       e.preventDefault();
       e.stopImmediatePropagation();
       if (t === document.documentElement || t === document.body) return;
-      const target = this.host.surfaceContaining(t) ?? t;
-      if (e.shiftKey) this.togglePixel(target);
-      else this.cycle(target);
+      // Shift picks the exact element under the cursor (a headline inside a
+      // card); plain clicks toggle the surface that owns what you clicked.
+      if (e.shiftKey) this.togglePixel(t);
+      else this.cycle(this.host.surfaceContaining(t) ?? t);
     };
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Shift") this.shiftHeld = true;
       if (e.key === "Escape") this.host.exit();
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "Shift") this.shiftHeld = false;
     };
     window.addEventListener("mousemove", onMove, true);
     window.addEventListener("click", onClick, true);
     window.addEventListener("keydown", onKey, true);
+    window.addEventListener("keyup", onKeyUp, true);
     this.listeners.push(
       () => window.removeEventListener("mousemove", onMove, true),
       () => window.removeEventListener("click", onClick, true),
-      () => window.removeEventListener("keydown", onKey, true)
+      () => window.removeEventListener("keydown", onKey, true),
+      () => window.removeEventListener("keyup", onKeyUp, true)
     );
     this.refresh();
   }
@@ -277,9 +289,18 @@ export class DevMode {
         ctx.fillStyle = `rgba(${COLOR_SOLID}, 0.22)`;
         ctx.fillRect(x, y, r.w, r.h);
       }
-      ctx.strokeStyle = `rgba(${COLOR_SOLID}, 0.8)`;
+      // Masked surfaces get a faint dashed bound: the tinted pixels are the
+      // real collision shape, the box is only where the element sits.
       ctx.lineWidth = 1;
-      ctx.strokeRect(x + 0.5, y + 0.5, r.w - 1, r.h - 1);
+      if (r.mask) {
+        ctx.strokeStyle = `rgba(${COLOR_SOLID}, 0.35)`;
+        ctx.setLineDash([3, 4]);
+        ctx.strokeRect(x + 0.5, y + 0.5, r.w - 1, r.h - 1);
+        ctx.setLineDash([]);
+      } else {
+        ctx.strokeStyle = `rgba(${COLOR_SOLID}, 0.8)`;
+        ctx.strokeRect(x + 0.5, y + 0.5, r.w - 1, r.h - 1);
+      }
     }
 
     // the glass floor line
@@ -316,7 +337,8 @@ export class DevMode {
     // hover: what a click would toggle, and what it currently is
     const hov = this.hovered;
     if (hov && hov.isConnected) {
-      const target = this.host.surfaceContaining(hov) ?? hov;
+      // With shift held the pick is the exact element under the cursor.
+      const target = this.shiftHeld ? hov : (this.host.surfaceContaining(hov) ?? hov);
       const r = target.getBoundingClientRect();
       ctx.strokeStyle = "rgba(255,255,255,0.9)";
       ctx.setLineDash([4, 3]);
@@ -324,15 +346,24 @@ export class DevMode {
       ctx.setLineDash([]);
       const sel = selectorFor(target);
       const o = this.host.getOverrides();
-      const state = o.pixel.includes(sel)
-        ? "pixel-perfect"
-        : o.solid.includes(sel)
-          ? "forced solid"
-          : o.ignore.includes(sel)
-            ? "ignored"
-            : this.host.surfaceContaining(hov)
-              ? "auto: solid"
-              : "auto: not solid";
+      let state: string;
+      if (o.pixel.includes(sel)) {
+        state = "pixel-perfect (forced)";
+      } else if (o.solid.includes(sel)) {
+        state = "forced solid";
+      } else if (o.ignore.includes(sel)) {
+        state = "ignored";
+      } else {
+        const surf = this.host.surfaceContaining(target);
+        if (surf === target) {
+          // Images/canvases/SVGs are pixel-shaped out of the box — say so.
+          state = this.host.surfaceMasked(target) ? "auto: pixel-shaped" : "auto: solid";
+        } else if (surf) {
+          state = "inside a solid surface";
+        } else {
+          state = "auto: not solid";
+        }
+      }
       const label = `${sel} — ${state}`;
       ctx.font = "11px ui-monospace, SFMono-Regular, monospace";
       const tw = ctx.measureText(label).width;

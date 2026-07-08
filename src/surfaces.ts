@@ -206,6 +206,14 @@ export class Surfaces {
     return null;
   }
 
+  /** Does this accepted surface already collide with a pixel mask? */
+  surfaceMasked(el: Element): boolean {
+    for (const s of this.surfaces) {
+      if (s.el === el) return !!s.mask;
+    }
+    return false;
+  }
+
   start(): void {
     this.scan();
 
@@ -432,8 +440,9 @@ export class Surfaces {
 
       if (el.closest('[data-webpenguins="ignore"]')) continue;
       if (this.ignoreJoined && el.closest(this.ignoreJoined)) continue;
-      // Windows don't nest: skip descendants of accepted surfaces.
-      if (accepted.some((a) => a.contains(el))) continue;
+      // Windows don't nest: skip descendants of accepted surfaces — unless
+      // the user forced this one (a pixel-perfect headline inside a card).
+      if (!forced && accepted.some((a) => a.contains(el))) continue;
 
       // Visibility, including ancestor display/visibility/opacity.
       const cv = (
@@ -617,7 +626,9 @@ export class Surfaces {
       return fail("inside an ignored subtree (override selector)");
     }
     const parent = this.surfaces.find((s) => s.el !== el && s.el.contains(el));
-    if (parent) return fail("nested inside an accepted surface: " + describe(parent.el));
+    if (parent && hint !== "solid" && hint !== "pixel") {
+      return fail("nested inside an accepted surface: " + describe(parent.el));
+    }
 
     const st = getComputedStyle(el);
     if (st.visibility === "hidden" || st.display === "none" || parseFloat(st.opacity) < 0.15) {

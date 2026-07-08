@@ -111,6 +111,29 @@ try {
   `);
   console.log("PIXEL-TEXT:", JSON.stringify(pixel));
 
+  // 3b. Forced overrides must escape the windows-don't-nest rule: an <em>
+  //     INSIDE an accepted card still becomes a pixel surface.
+  const nested = await tab.eval(`
+    (function () {
+      window.flock.destroy();
+      window.flock = WebPenguins.start({ penguins: 2, pixel: ["#cardem"], debug: true });
+      return new Promise(function (res) {
+        setTimeout(function () {
+          var w = window.__webpenguins.world;
+          var em = document.getElementById("cardem");
+          var r = em.getBoundingClientRect();
+          var ex = r.left + scrollX, ey = r.top + scrollY;
+          var hit = w.rects.filter(function (q) {
+            return q.mask && Math.abs(q.x - ex) < 3 && Math.abs(q.y - ey) < 3;
+          })[0];
+          var cardStillSolid = w.rects.some(function (q) { return q.h === 71; });
+          res({ emMasked: !!hit, cardStillSolid: cardStillSolid });
+        }, 2500);
+      });
+    })()
+  `);
+  console.log("NESTED-PIXEL:", JSON.stringify(nested));
+
   // 4. Shift+click in dev mode toggles pixel-perfect and exports data-pixel.
   const shiftClick = await tab.eval(`
     (function () {
@@ -137,6 +160,8 @@ try {
     pixel.masked === true &&
     pixel.glyphInk === true &&
     pixel.rightEmpty === true &&
+    nested.emMasked === true &&
+    nested.cardStillSolid === true &&
     /data-pixel="#inkhead"/.test(shiftClick.snippet) &&
     overrides.imgStays === true &&
     overrides.ghostSolid === true &&

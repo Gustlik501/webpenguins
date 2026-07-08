@@ -164,6 +164,7 @@ export class Engine {
       this.dev = new DevMode({
         world: this.world,
         surfaceContaining: (el) => this.surfaces.surfaceContaining(el),
+        surfaceMasked: (el) => this.surfaces.surfaceMasked(el),
         getOverrides: () => ({
           solid: [...this.overrides.solid],
           ignore: [...this.overrides.ignore],
