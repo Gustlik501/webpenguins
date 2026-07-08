@@ -60,6 +60,35 @@ Page authors can hint the surface scanner:
 `data-webpenguins="solid"` forces an element to be a platform,
 `data-webpenguins="ignore"` excludes it (and its descendants).
 
+### Developer mode
+
+Don't want to blindly trust the engine's idea of what's collidable?
+Developer mode shows you and lets you overrule it:
+
+```js
+WebPenguins.start({ devMode: true });   // or data-dev on the script tag
+```
+
+Every collidable surface is tinted green on the overlay — including the
+per-pixel mask shapes of images and logos — the glass floor shows as a
+dashed line, and hovering any element shows its selector and current state.
+**Click an element** to cycle it through *auto → forced solid / ignored →
+auto*; overrides are stored as CSS selectors, so overriding `.card` covers
+every card on the site. The floating panel shows live counts, clears
+overrides, and — the point of it all — **exports a single copyable line**
+like:
+
+```html
+<script src="webpenguins.js" data-auto data-penguins="12" data-theme="Turtles" data-solid=".hero; #logo" data-ignore=".ad-banner"></script>
+```
+
+Drop that next to a hosted copy of `webpenguins.js` and the site runs with
+exactly what you configured. The same overrides work programmatically:
+`WebPenguins.start({ solid: [".hero"], ignore: [".ad-banner"] })`.
+
+In the extension, toggle *Developer mode* in the popup — overrides are
+saved per site (`storage.sync`) and re-applied on every visit.
+
 Wondering why penguins do (or don't) land on something? Start with
 `WebPenguins.start({ debug: true, ... })`, select the element in devtools,
 and run `window.__webpenguins.explain($0)` — it reports the verdict of every

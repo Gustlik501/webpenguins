@@ -1,6 +1,7 @@
 // Wires everything together: fixed-timestep toon ticks (the original 60ms
 // cadence — that retro shuffle is part of the look), per-frame snow physics,
 // and one full redraw per animation frame.
+import { DevMode, Overrides } from "./devmode";
 import { PenguinManager, ZapPoint } from "./penguins";
 import { Renderer } from "./render";
 import { SnowSystem } from "./snow";
@@ -16,6 +17,12 @@ function resolveScale(scale: number | "auto" | undefined): number {
   // Default 1: the original sprite sizes.
   if (typeof scale === "number" && scale > 0) return Math.min(4, scale);
   return 1;
+}
+
+/** Selector lists arrive as arrays or ";"-separated strings (data attrs). */
+function parseList(v: string | string[] | undefined): string[] {
+  if (!v) return [];
+  return (Array.isArray(v) ? v : v.split(";")).map((s) => s.trim()).filter(Boolean);
 }
 
 function docWidth(): number {
@@ -45,6 +52,8 @@ export class Engine {
   private terminating = false;
   private scale = 1;
   private delay = 60; // ms per tick, set by the theme (Bill runs at 150)
+  private dev: DevMode | undefined;
+  private overrides: Overrides = { solid: [], ignore: [] };
   // debug instrumentation (exposed via the `debug` option)
   loopCount = 0;
   tickCount = 0;
@@ -77,6 +86,8 @@ export class Engine {
 
     // Surfaces must exist before anyone spawns — the spawn-safety check
     // needs a populated world or penguins materialise inside cards.
+    this.overrides = { solid: parseList(opts.solid), ignore: parseList(opts.ignore) };
+    this.surfaces.setOverrides(this.overrides.solid, this.overrides.ignore);
     this.surfaces.start();
     this.world.setRects(this.surfaces.getRects());
 
@@ -113,7 +124,8 @@ export class Engine {
 
     if (opts.zapOnClick ?? true) {
       const onPointerDown = (e: PointerEvent) => {
-        if (!this.terminating) {
+        // In dev mode clicks pick elements; nobody gets zapped.
+        if (!this.terminating && !this.dev) {
           this.zaps.push({ x: e.clientX + window.scrollX, y: e.clientY + window.scrollY });
         }
       };
@@ -139,7 +151,57 @@ export class Engine {
         explain: (el: Element) => this.surfaces.explain(el),
       };
     }
+    if (opts.devMode) this.setDevMode(true);
     this.rafId = requestAnimationFrame(this.loop);
+  }
+
+  private setDevMode(on: boolean): void {
+    if (on && !this.dev && !this.destroyed) {
+      this.dev = new DevMode({
+        world: this.world,
+        surfaceContaining: (el) => this.surfaces.surfaceContaining(el),
+        getOverrides: () => ({ solid: [...this.overrides.solid], ignore: [...this.overrides.ignore] }),
+        setOverrides: (o) => this.applyOverrides(o, true),
+        buildSnippet: () => this.buildSnippet(),
+        exit: () => {
+          this.setDevMode(false);
+          this.opts.onDevModeExit?.();
+        },
+      });
+    } else if (!on && this.dev) {
+      this.dev.stop();
+      this.dev = undefined;
+    }
+  }
+
+  private applyOverrides(o: Overrides, persist: boolean): void {
+    this.overrides = { solid: o.solid, ignore: o.ignore };
+    this.surfaces.setOverrides(o.solid, o.ignore);
+    if (persist) {
+      this.opts.onOverridesChange?.({ solid: [...o.solid], ignore: [...o.ignore] });
+    }
+    this.dev?.refresh();
+  }
+
+  /** The one-line embed for the current configuration (dev mode export). */
+  private buildSnippet(): string {
+    const o = this.opts;
+    const esc = (s: string) => s.replace(/"/g, "'");
+    const attrs = ['src="webpenguins.js"', "data-auto"];
+    const n = this.manager && !this.terminating ? this.manager.penguinNumber : o.penguins;
+    if (n !== undefined && n !== 25) attrs.push(`data-penguins="${n}"`);
+    const themes = resolveThemes(o.theme);
+    if (themes.join(",") !== "Penguins") attrs.push(`data-theme="${esc(themes.join(","))}"`);
+    if (o.snow === false || typeof o.snow === "number") attrs.push(`data-snow="${o.snow}"`);
+    if (o.santa === false) attrs.push('data-santa="false"');
+    else if (typeof o.santa === "string" && o.santa !== "big") attrs.push(`data-santa="${o.santa}"`);
+    if ((o.trees ?? 0) > 0) attrs.push(`data-trees="${o.trees}"`);
+    if (o.moon) attrs.push('data-moon="true"');
+    if (o.blood === false) attrs.push('data-blood="false"');
+    if (typeof o.scale === "number" && o.scale !== 1) attrs.push(`data-scale="${o.scale}"`);
+    if (this.overrides.solid.length) attrs.push(`data-solid="${esc(this.overrides.solid.join("; "))}"`);
+    if (this.overrides.ignore.length) attrs.push(`data-ignore="${esc(this.overrides.ignore.join("; "))}"`);
+    return `<script ${attrs.join(" ")}></script>`;
   }
 
   private loop = (): void => {
@@ -260,6 +322,7 @@ export class Engine {
       p.mapped = true;
     }
     this.snow?.drawOver(renderer.ctx);
+    this.dev?.draw(renderer.ctx);
   }
 
   setPenguins(n: number): void {
@@ -274,6 +337,16 @@ export class Engine {
       if (opts.penguins !== undefined) this.manager.setNumber(opts.penguins);
       if (opts.blood !== undefined) this.manager.blood = opts.blood;
       if (opts.angels !== undefined) this.manager.angels = opts.angels;
+      if (opts.solid !== undefined || opts.ignore !== undefined) {
+        this.applyOverrides(
+          {
+            solid: opts.solid !== undefined ? parseList(opts.solid) : this.overrides.solid,
+            ignore: opts.ignore !== undefined ? parseList(opts.ignore) : this.overrides.ignore,
+          },
+          false
+        );
+      }
+      if (opts.devMode !== undefined) this.setDevMode(opts.devMode);
     });
   }
 
@@ -321,6 +394,8 @@ export class Engine {
     if (this.destroyed) return;
     this.destroyed = true;
     cancelAnimationFrame(this.rafId);
+    this.dev?.stop();
+    this.dev = undefined;
     this.surfaces.stop();
     for (const c of this.cleanups) c();
     this.cleanups = [];

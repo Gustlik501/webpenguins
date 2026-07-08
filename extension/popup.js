@@ -11,7 +11,9 @@ var DEFAULTS = {
   trees: 0,
   blood: true,
   zap: true,
+  devMode: false,
   disabledSites: [],
+  overrides: {},
   bombNonce: 0,
 };
 
@@ -38,6 +40,7 @@ function render(s) {
   $("trees").value = s.trees;
   $("blood").checked = !!s.blood;
   $("zap").checked = !!s.zap;
+  $("dev").checked = !!s.devMode;
   if (currentHost) {
     $("site").checked = (s.disabledSites || []).indexOf(currentHost) === -1;
   }
@@ -100,6 +103,9 @@ $("blood").addEventListener("change", function () {
 });
 $("zap").addEventListener("change", function () {
   save({ zap: this.checked });
+});
+$("dev").addEventListener("change", function () {
+  save({ devMode: this.checked });
 });
 
 $("bomb").addEventListener("click", function () {

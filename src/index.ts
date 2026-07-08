@@ -73,6 +73,9 @@ function parseDatasetOptions(d: DOMStringMap): WebPenguinsOptions {
   if (d.angels !== undefined) opts.angels = bool(d.angels);
   if (d.zap !== undefined) opts.zapOnClick = bool(d.zap);
   if (d.scale !== undefined) opts.scale = d.scale === "auto" ? "auto" : Number(d.scale);
+  if (d.solid !== undefined) opts.solid = d.solid;
+  if (d.ignore !== undefined) opts.ignore = d.ignore;
+  if (d.dev !== undefined) opts.devMode = bool(d.dev);
   return opts;
 }
 

@@ -204,6 +204,7 @@ await flock.stop();          // the classic bomber exit sequence
   <button onclick="flock.setPenguins((window._n=(window._n||8)+4))">+4 penguins</button>
   <button onclick="flock.stop()">💣 bomb them</button>
   <button onclick="window.flock=WebPenguins.start({trees:3})">restart</button>
+  <button onclick="window.flock=WebPenguins.start({trees:3,devMode:true})">🔧 dev mode</button>
 </div>
 
 <script src="../dist/webpenguins.js"></script>

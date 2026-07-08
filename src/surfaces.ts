@@ -163,6 +163,41 @@ export class Surfaces {
   private pageCanvas = "rgb(255, 255, 255)";
   // pixel masks (rescan shortly after a cross-origin retry succeeds)
   private masks = new MaskRegistry(() => this.scheduleRescan(50));
+  // user overrides (dev mode / options): CSS selectors, joined for matches()
+  private solidJoined = "";
+  private ignoreJoined = "";
+
+  /** Set the user's solid/ignore selector overrides and rescan. */
+  setOverrides(solid: string[], ignore: string[]): void {
+    const valid = (list: string[]) =>
+      list.filter((sel) => {
+        try {
+          document.querySelector(sel);
+          return true;
+        } catch {
+          console.warn(`webpenguins: invalid override selector "${sel}"`);
+          return false;
+        }
+      });
+    this.solidJoined = valid(solid).join(", ");
+    this.ignoreJoined = valid(ignore).join(", ");
+    this.scan();
+  }
+
+  /** The effective hint: user overrides beat the page's data attributes. */
+  private hintFor(el: Element): string | null {
+    if (this.ignoreJoined && el.matches(this.ignoreJoined)) return "ignore";
+    if (this.solidJoined && el.matches(this.solidJoined)) return "solid";
+    return el.getAttribute("data-webpenguins");
+  }
+
+  /** The accepted surface element that is (or contains) `el`, if any. */
+  surfaceContaining(el: Element): Element | null {
+    for (const s of this.surfaces) {
+      if (s.el === el || s.el.contains(el)) return s.el;
+    }
+    return null;
+  }
 
   start(): void {
     this.scan();
@@ -360,17 +395,23 @@ export class Surfaces {
       const el = candidates[i];
       const tag = el.tagName.toUpperCase();
       if (NEVER_SOLID.has(tag)) continue;
-      const hint = el.getAttribute("data-webpenguins");
+      const hint = this.hintFor(el);
       if (hint === "ignore") continue;
 
       const rect = el.getBoundingClientRect();
-      if (rect.width < MIN_WIDTH || rect.height < (tag === "HR" ? 1 : MIN_HEIGHT)) continue;
-      // Skip page-wrapper sized boxes; penguins should walk on things,
-      // not be walled in by the layout.
-      if (rect.width > vw * 0.98 && rect.height > vh * 0.85) continue;
-      if (rect.height > vh * 1.5) continue;
+      if (hint === "solid") {
+        // The user explicitly forced this element: only reject degenerates.
+        if (rect.width < 4 || rect.height < 4) continue;
+      } else {
+        if (rect.width < MIN_WIDTH || rect.height < (tag === "HR" ? 1 : MIN_HEIGHT)) continue;
+        // Skip page-wrapper sized boxes; penguins should walk on things,
+        // not be walled in by the layout.
+        if (rect.width > vw * 0.98 && rect.height > vh * 0.85) continue;
+        if (rect.height > vh * 1.5) continue;
+      }
 
       if (el.closest('[data-webpenguins="ignore"]')) continue;
+      if (this.ignoreJoined && el.closest(this.ignoreJoined)) continue;
       // Windows don't nest: skip descendants of accepted surfaces.
       if (accepted.some((a) => a.contains(el))) continue;
 
@@ -536,14 +577,19 @@ export class Surfaces {
     out.rect = `${Math.round(rect.left)},${Math.round(rect.top)} ${Math.round(rect.width)}x${Math.round(rect.height)} (viewport coords)`;
 
     if (NEVER_SOLID.has(tag)) return fail("this tag is never solid");
-    const hint = el.getAttribute("data-webpenguins");
-    if (hint === "ignore") return fail('data-webpenguins="ignore"');
-    if (rect.width < MIN_WIDTH || rect.height < (tag === "HR" ? 1 : MIN_HEIGHT)) {
-      return fail(`too small (needs ${MIN_WIDTH}x${MIN_HEIGHT})`);
+    const hint = this.hintFor(el);
+    if (hint === "ignore") return fail("ignored (override selector or data-webpenguins)");
+    if (hint !== "solid") {
+      if (rect.width < MIN_WIDTH || rect.height < (tag === "HR" ? 1 : MIN_HEIGHT)) {
+        return fail(`too small (needs ${MIN_WIDTH}x${MIN_HEIGHT})`);
+      }
+      if (rect.width > vw * 0.98 && rect.height > vh * 0.85) return fail("page-wrapper sized");
+      if (rect.height > vh * 1.5) return fail("taller than 1.5 viewports");
     }
-    if (rect.width > vw * 0.98 && rect.height > vh * 0.85) return fail("page-wrapper sized");
-    if (rect.height > vh * 1.5) return fail("taller than 1.5 viewports");
     if (el.closest('[data-webpenguins="ignore"]')) return fail("inside an ignored subtree");
+    if (this.ignoreJoined && el.closest(this.ignoreJoined)) {
+      return fail("inside an ignored subtree (override selector)");
+    }
     const parent = this.surfaces.find((s) => s.el !== el && s.el.contains(el));
     if (parent) return fail("nested inside an accepted surface: " + describe(parent.el));
 

@@ -158,4 +158,18 @@ export interface WebPenguinsOptions {
   zIndex?: number;
   /** Do nothing when the user prefers reduced motion. Default true. */
   respectReducedMotion?: boolean;
+  /**
+   * Developer mode: overlay every collidable surface (mask shapes included),
+   * click elements to cycle auto → solid/ignored, and export a one-line
+   * embed snippet with the current settings.
+   */
+  devMode?: boolean;
+  /** CSS selectors forced to be platforms — a list or a ";"-joined string. */
+  solid?: string | string[];
+  /** CSS selectors never solid — a list or a ";"-joined string. */
+  ignore?: string | string[];
+  /** Dev mode edited the overrides — persist them (e.g. per-site storage). */
+  onOverridesChange?: (overrides: { solid: string[]; ignore: string[] }) => void;
+  /** The user exited dev mode via Esc or the panel button. */
+  onDevModeExit?: () => void;
 }
