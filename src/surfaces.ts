@@ -5,13 +5,13 @@
 // person can see — a background that differs from what's behind it, a
 // visible border or shadow, real replaced content (a loaded image, a video).
 // Bare headings collide with their text's ink box rather than their layout
-// box, rects are clipped by overflow-hidden ancestors, big rounded corners
-// are inset, and boxes hidden behind overlays are dropped.
+// box, rects are clipped by overflow-hidden ancestors, rounded corners get
+// a rounded-rect pixel mask, and boxes hidden behind overlays are dropped.
 //
 // Everything lives in *document* coordinates: the page is the desktop and
 // scrolling merely moves the camera. Only real layout changes (rescans that
 // move a rect) count as "windows moving".
-import { MaskRegistry } from "./masks";
+import { MaskRegistry, RadiusPair, buildRoundedRectMask, normalizeRadii } from "./masks";
 import { PixelMask, SolidRect } from "./types";
 
 const NEVER_SOLID = new Set([
@@ -110,6 +110,19 @@ function colorsDiffer(a: string, b: string): boolean {
     Math.max(Math.abs(pa[0] - pb[0]), Math.abs(pa[1] - pb[1]), Math.abs(pa[2] - pb[2])) > 12 ||
     Math.abs(pa[3] - pb[3]) > 0.2
   );
+}
+
+/** One computed border-*-radius value: "10px", "50%", or "10px 20px". */
+function radiusPair(v: string, w: number, h: number): RadiusPair {
+  const parts = v.trim().split(/\s+/);
+  const rx = parts[0] || "0";
+  const ry = parts[1] || rx;
+  const px = parseFloat(rx) || 0;
+  const py = parseFloat(ry) || 0;
+  return {
+    x: rx.endsWith("%") ? (px / 100) * w : px,
+    y: ry.endsWith("%") ? (py / 100) * h : py,
+  };
 }
 
 function shadowVisible(boxShadow: string): boolean {
@@ -368,18 +381,34 @@ export class Surfaces {
         }
       }
 
-      // Big rounded corners: stand on the flat part, not the phantom corner
-      // (the mask already handles shape better, when we have one).
+      // Rounded corners become part of the collision shape: a procedural
+      // rounded-rect mask lets toons walk down the shoulder of the curve
+      // and fall off at the *visual* edge, not where the rounding starts.
+      // (Content masks already carry the true shape when we have one.)
       if (!mask) {
-        const radius = Math.max(
-          parseFloat(st.borderTopLeftRadius) || 0,
-          parseFloat(st.borderTopRightRadius) || 0
+        const radii = normalizeRadii(rect.width, rect.height, {
+          tl: radiusPair(st.borderTopLeftRadius, rect.width, rect.height),
+          tr: radiusPair(st.borderTopRightRadius, rect.width, rect.height),
+          br: radiusPair(st.borderBottomRightRadius, rect.width, rect.height),
+          bl: radiusPair(st.borderBottomLeftRadius, rect.width, rect.height),
+        });
+        const maxR = Math.max(
+          radii.tl.x, radii.tl.y, radii.tr.x, radii.tr.y,
+          radii.br.x, radii.br.y, radii.bl.x, radii.bl.y
         );
-        if (radius > 8) {
-          const inset = Math.min(radius, box.w / 4);
-          box = { x: box.x + inset, y: box.y, w: box.w - 2 * inset, h: box.h };
+        if (maxR > 8) {
+          const rounded = buildRoundedRectMask(rect.width, rect.height, radii);
+          if (rounded) {
+            mask = rounded;
+            maskDX = Math.round(box.x - rect.left);
+            maskDY = Math.round(box.y - rect.top);
+          } else {
+            // Too big to mask: inset so nobody stands on phantom corner air.
+            const inset = Math.min(Math.max(radii.tl.x, radii.tr.x), box.w / 4);
+            box = { x: box.x + inset, y: box.y, w: box.w - 2 * inset, h: box.h };
+            if (box.w < MIN_WIDTH) continue;
+          }
         }
-        if (box.w < MIN_WIDTH) continue;
       }
 
       if (this.occluded(el, box)) continue;

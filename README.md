@@ -81,8 +81,8 @@ no background worker, no messaging, no page-visible globals.
   behind it, a visible border/outline/shadow on any side, a gradient, or
   real replaced content (a *loaded* image, a video…). Bare headings collide
   with their text's ink box instead of their full-width layout box, rects
-  are clipped by `overflow: hidden` ancestors, big rounded corners are inset
-  so penguins stand on the flat top, and boxes hidden behind overlays are
+  are clipped by `overflow: hidden` ancestors, rounded corners become part
+  of the collision shape (see below), and boxes hidden behind overlays are
   dropped (`elementFromPoint` sampling). The **document is the desktop**:
   everything lives in page coordinates and scrolling only moves the camera,
   so penguins stay alive whether on screen or not. Only real layout changes
@@ -106,6 +106,11 @@ no background worker, no messaging, no page-visible globals.
   plain rect is identical and cheaper), fully-transparent ones stop being
   solid entirely, and cross-origin images that taint the canvas retry via
   `crossOrigin="anonymous"` before falling back to the plain rect.
+  CSS `border-radius` gets the same treatment: rounded cards, pills and
+  circular avatars receive a procedurally generated rounded-rect mask
+  (pure math, cached per size), so penguins walk down the shoulder of a
+  corner and tumble off at the visual edge — not where the rounding merely
+  begins. Snow drifts settle along the curve too.
 - **The glass floor** — the viewport's bottom edge is a one-way collider:
   falling penguins land on it, so on endless/infinite-scroll pages nothing
   ever falls out of sight. Gentle scrolling carries the penguins standing on

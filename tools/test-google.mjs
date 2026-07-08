@@ -26,7 +26,8 @@ try {
       var svg = document.querySelector("svg.lnXdpd");
       var r = svg.getBoundingClientRect();
       var docX = r.left + scrollX, docY = r.top + scrollY;
-      var logoRect = w.rects.filter(function (q) { return q.mask; })[0];
+      // the search pill is rounded-rect masked now too — pin the logo by width
+      var logoRect = w.rects.filter(function (q) { return q.mask && q.w === 272; })[0];
       // scanline through the letters (y=46 hits the round bowls of o/g/e)
       var line = "";
       for (var x = 0; x < 272; x += 8) line += w.intersects(docX + x, docY + 46, 1, 1) ? "#" : ".";

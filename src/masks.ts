@@ -95,6 +95,121 @@ function buildMask(
   return bitsFromData(data, w, h);
 }
 
+// -------------------------------------------------------- rounded corners
+// CSS border-radius as a collision shape. Insetting the box by the radius
+// (the v2 approach) ended the platform where the rounding merely *begins*,
+// so toons fell off while standing over visibly solid surface. A procedural
+// rounded-rect mask lets them walk down the shoulder of the curve — the
+// walker's 8px step-down handles the descent, exactly like on the curved
+// letterforms of a logo — and tumble off at the visual edge.
+
+export interface RadiusPair {
+  x: number;
+  y: number;
+}
+
+export interface CornerRadii {
+  tl: RadiusPair;
+  tr: RadiusPair;
+  br: RadiusPair;
+  bl: RadiusPair;
+}
+
+/** The CSS overlap rule: scale all radii down so adjacent corners fit. */
+export function normalizeRadii(w: number, h: number, r: CornerRadii): CornerRadii {
+  const f = Math.min(
+    1,
+    w / Math.max(1e-6, r.tl.x + r.tr.x),
+    w / Math.max(1e-6, r.bl.x + r.br.x),
+    h / Math.max(1e-6, r.tl.y + r.bl.y),
+    h / Math.max(1e-6, r.tr.y + r.br.y)
+  );
+  const s = (p: RadiusPair): RadiusPair => ({
+    x: Math.max(0, p.x * f),
+    y: Math.max(0, p.y * f),
+  });
+  return { tl: s(r.tl), tr: s(r.tr), br: s(r.br), bl: s(r.bl) };
+}
+
+// Same-sized cards share one mask; the cache is keyed by dims + radii.
+const ROUNDED_CACHE_MAX = 48;
+const roundedCache = new Map<string, PixelMask>();
+
+/**
+ * Procedural mask for a border-radius box (radii pre-normalized). Pure
+ * math — no canvas, no styles. Returns null for boxes too big to mask;
+ * the caller falls back to insetting.
+ */
+export function buildRoundedRectMask(w: number, h: number, r: CornerRadii): PixelMask | null {
+  w = Math.max(1, Math.round(w));
+  h = Math.max(1, Math.round(h));
+  if (w > 2600 || h > 1600) return null;
+  const key =
+    w + "x" + h + ":" + [r.tl, r.tr, r.br, r.bl].map((p) => (p.x | 0) + "," + (p.y | 0)).join(";");
+  const hit = roundedCache.get(key);
+  if (hit) return hit;
+
+  const rowWords = Math.ceil(w / 32);
+  // Solid everywhere except the four quarter-ellipse cutouts.
+  const bits = new Uint32Array(rowWords * h).fill(0xffffffff);
+  const topProfile = new Int16Array(w); // 0 = the flat top
+
+  const carve = (
+    x0: number,
+    x1: number,
+    y0: number,
+    y1: number,
+    cx: number,
+    cy: number,
+    rx: number,
+    ry: number
+  ) => {
+    if (rx < 0.5 || ry < 0.5) return;
+    x0 = Math.max(0, Math.floor(x0));
+    x1 = Math.min(w, Math.ceil(x1));
+    y0 = Math.max(0, Math.floor(y0));
+    y1 = Math.min(h, Math.ceil(y1));
+    for (let y = y0; y < y1; y++) {
+      const row = y * rowWords;
+      const dy = (y + 0.5 - cy) / ry;
+      for (let x = x0; x < x1; x++) {
+        const dx = (x + 0.5 - cx) / rx;
+        if (dx * dx + dy * dy > 1) bits[row + (x >> 5)] &= ~(1 << (x & 31));
+      }
+    }
+  };
+  carve(0, r.tl.x, 0, r.tl.y, r.tl.x, r.tl.y, r.tl.x, r.tl.y);
+  carve(w - r.tr.x, w, 0, r.tr.y, w - r.tr.x, r.tr.y, r.tr.x, r.tr.y);
+  carve(w - r.br.x, w, h - r.br.y, h, w - r.br.x, h - r.br.y, r.br.x, r.br.y);
+  carve(0, r.bl.x, h - r.bl.y, h, r.bl.x, h - r.bl.y, r.bl.x, r.bl.y);
+
+  // Snow (and landing) follows the curve under the top corners.
+  const profile = (x0: number, x1: number) => {
+    x0 = Math.max(0, Math.floor(x0));
+    x1 = Math.min(w, Math.ceil(x1));
+    for (let x = x0; x < x1; x++) {
+      let top = -1;
+      for (let y = 0; y < h; y++) {
+        if (bits[y * rowWords + (x >> 5)] & (1 << (x & 31))) {
+          top = y;
+          break;
+        }
+      }
+      topProfile[x] = top;
+    }
+  };
+  profile(0, r.tl.x);
+  profile(w - r.tr.x, w);
+
+  const mask: PixelMask = { w, h, rowWords, bits, topProfile };
+  if (roundedCache.size >= ROUNDED_CACHE_MAX) {
+    const oldest = roundedCache.keys().next().value;
+    if (oldest !== undefined) roundedCache.delete(oldest);
+  }
+  roundedCache.set(key, mask);
+  return mask;
+}
+
 // ------------------------------------------------------------ inline <svg>
 // Vector rasterization: convert the SVG's shapes to Path2D and fill them
 // with their *computed* styles (so CSS-driven fills, like Google's white

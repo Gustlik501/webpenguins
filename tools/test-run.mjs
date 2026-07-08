@@ -23,7 +23,7 @@ try {
   const maskCheck = await probe.eval(`
     (function () {
       var w = window.__webpenguins.world;
-      var r = w.rects.filter(function (x) { return x.mask; })[0];
+      var r = w.rects.filter(function (x) { return x.mask && x.w === 400; })[0];
       if (!r) return "NO-MASKED-RECT";
       return {
         rect: r.x + "," + r.y + " " + r.w + "x" + r.h,
@@ -52,6 +52,25 @@ try {
     })()
   `);
   console.log("SVG-MASK-CHECK:", JSON.stringify(svgCheck));
+
+  // Rounded pill (border-radius: 30px): the mask must follow the curve,
+  // so walkers descend the corner shoulder instead of falling at its start.
+  const roundedCheck = await probe.eval(`
+    (function () {
+      var w = window.__webpenguins.world;
+      var r = w.rects.filter(function (x) { return x.mask && x.w === 320; })[0];
+      if (!r) return "NO-ROUNDED-MASK";
+      return {
+        rect: r.w + "x" + r.h,
+        topMiddle: w.intersects(r.x + 160, r.y + 1, 1, 1),
+        cornerAir: !w.intersects(r.x + 2, r.y + 2, 1, 1),
+        curveAirAbove: !w.intersects(r.x + 6, r.y + 4, 1, 1),
+        curveSolidBelow: w.intersects(r.x + 6, r.y + 20, 1, 1),
+        leftEdgeMiddle: w.intersects(r.x + 1, r.y + 30, 1, 1)
+      };
+    })()
+  `);
+  console.log("ROUNDED-CHECK:", JSON.stringify(roundedCheck));
 
   await sleep(seconds * 1000);
   const late = await probe.eval("document.getElementById('out').textContent");
