@@ -438,8 +438,11 @@ export class Surfaces {
         if (rect.height > vh * 1.5) continue;
       }
 
-      if (el.closest('[data-webpenguins="ignore"]')) continue;
-      if (this.ignoreJoined && el.closest(this.ignoreJoined)) continue;
+      // Subtree ignores wipe whole regions — but an explicit force on a
+      // descendant is more specific and wins (ignore the hero, keep its
+      // logo solid).
+      if (!forced && el.closest('[data-webpenguins="ignore"]')) continue;
+      if (!forced && this.ignoreJoined && el.closest(this.ignoreJoined)) continue;
       // Windows don't nest: skip descendants of accepted surfaces — unless
       // the user forced this one (a pixel-perfect headline inside a card).
       if (!forced && accepted.some((a) => a.contains(el))) continue;
@@ -621,8 +624,11 @@ export class Surfaces {
       if (rect.width > vw * 0.98 && rect.height > vh * 0.85) return fail("page-wrapper sized");
       if (rect.height > vh * 1.5) return fail("taller than 1.5 viewports");
     }
-    if (el.closest('[data-webpenguins="ignore"]')) return fail("inside an ignored subtree");
-    if (this.ignoreJoined && el.closest(this.ignoreJoined)) {
+    const forcedHint = hint === "solid" || hint === "pixel";
+    if (!forcedHint && el.closest('[data-webpenguins="ignore"]')) {
+      return fail("inside an ignored subtree");
+    }
+    if (!forcedHint && this.ignoreJoined && el.closest(this.ignoreJoined)) {
       return fail("inside an ignored subtree (override selector)");
     }
     const parent = this.surfaces.find((s) => s.el !== el && s.el.contains(el));

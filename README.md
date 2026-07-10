@@ -93,6 +93,9 @@ copyable line** like:
 Drop that next to a hosted copy of `webpenguins.js` and the site runs with
 exactly what you configured. The same overrides work programmatically:
 `WebPenguins.start({ solid: [".hero"], ignore: [".ad-banner"], pixel: ["h1.title"] })`.
+Precedence follows specificity: an explicit override on an element beats an
+inherited subtree ignore, so you can ignore a whole section and still force
+one element inside it to be a platform.
 
 In the extension, toggle *Developer mode* in the popup — overrides are
 saved per site (`storage.sync`) and re-applied on every visit.

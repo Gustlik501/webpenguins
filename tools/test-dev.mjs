@@ -36,6 +36,32 @@ try {
   `);
   console.log("OVERRIDE-OPTIONS:", JSON.stringify(overrides));
 
+  // 1b. A forced child inside an ignored subtree must still collide:
+  //     ignore the card, force the <em> inside it solid.
+  const forcedChild = await tab.eval(`
+    (function () {
+      window.flock.destroy();
+      window.flock = WebPenguins.start({
+        penguins: 3, ignore: [".card"], solid: ["#cardem"], debug: true
+      });
+      return new Promise(function (res) {
+        setTimeout(function () {
+          var w = window.__webpenguins.world;
+          var em = document.getElementById("cardem");
+          var r = em.getBoundingClientRect();
+          var ex = r.left + scrollX, ey = r.top + scrollY;
+          res({
+            cardGone: !w.rects.some(function (q) { return q.h === 71 || q.h === 152; }),
+            emSolid: w.rects.some(function (q) {
+              return Math.abs(q.x - ex) < 3 && Math.abs(q.y - ey) < 3;
+            })
+          });
+        }, 800);
+      });
+    })()
+  `);
+  console.log("FORCED-CHILD:", JSON.stringify(forcedChild));
+
   // 2. Dev mode UI: panel appears, a click on #ghost forces it solid,
   //    a second click flips it to ignored, snippet carries it all.
   const dev = await tab.eval(`
@@ -157,6 +183,10 @@ try {
 
   const ok =
     overrides.cardGone === true &&
+    overrides.imgStays === true &&
+    overrides.ghostSolid === true &&
+    forcedChild.cardGone === true &&
+    forcedChild.emSolid === true &&
     pixel.masked === true &&
     pixel.glyphInk === true &&
     pixel.rightEmpty === true &&
