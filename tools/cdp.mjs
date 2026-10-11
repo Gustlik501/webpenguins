@@ -4,15 +4,40 @@ import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
-const EDGE_PATHS = [
+const BROWSER_PATHS = [
   "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
   "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
   "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "/Applications/Chromium.app/Contents/MacOS/Chromium",
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+];
+// Looked up on $PATH. Chromium first: branded Chrome ignores --load-extension.
+const BROWSER_NAMES = [
+  "chromium",
+  "chromium-browser",
+  "microsoft-edge",
+  "microsoft-edge-stable",
+  "google-chrome",
+  "google-chrome-stable",
 ];
 
+/** $WP_BROWSER (set by the nix devshell), else a known install, else $PATH. */
+export function findBrowser() {
+  if (process.env.WP_BROWSER) return process.env.WP_BROWSER;
+  const known = BROWSER_PATHS.find((p) => fs.existsSync(p));
+  if (known) return known;
+  for (const dir of (process.env.PATH || "").split(path.delimiter)) {
+    for (const name of BROWSER_NAMES) {
+      const p = path.join(dir, name);
+      if (fs.existsSync(p)) return p;
+    }
+  }
+  throw new Error("No Chromium/Edge/Chrome found (set WP_BROWSER to its executable)");
+}
+
 export async function launchBrowser(userDataDir) {
-  const exe = EDGE_PATHS.find((p) => fs.existsSync(p));
-  if (!exe) throw new Error("No Edge/Chrome found");
+  const exe = findBrowser();
   fs.mkdirSync(userDataDir, { recursive: true });
   fs.rmSync(path.join(userDataDir, "DevToolsActivePort"), { force: true });
   const proc = spawn(

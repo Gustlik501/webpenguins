@@ -159,9 +159,10 @@ export interface WebPenguinsOptions {
   /** Do nothing when the user prefers reduced motion. Default true. */
   respectReducedMotion?: boolean;
   /**
-   * Developer mode: overlay every collidable surface (mask shapes included),
-   * click elements to cycle auto → solid/ignored, and export a one-line
-   * embed snippet with the current settings.
+   * Developer mode: a control panel pinned to the bottom-right corner (the
+   * extension popup's settings, collapsible to a penguin icon), an overlay
+   * of every collidable surface (mask shapes included), click elements to
+   * cycle auto → solid/ignored, and a one-line embed snippet to export.
    */
   devMode?: boolean;
   /** CSS selectors forced to be platforms — a list or a ";"-joined string. */
@@ -176,6 +177,12 @@ export interface WebPenguinsOptions {
   pixel?: string | string[];
   /** Dev mode edited the overrides — persist them (e.g. per-site storage). */
   onOverridesChange?: (overrides: { solid: string[]; ignore: string[]; pixel: string[] }) => void;
-  /** The user exited dev mode via Esc or the panel button. */
+  /** The dev panel changed a setting (penguins, theme, snow, …) — persist it. */
+  onSettingsChange?: (
+    settings: Partial<
+      Pick<WebPenguinsOptions, "penguins" | "theme" | "snow" | "santa" | "trees" | "blood" | "zapOnClick">
+    >
+  ) => void;
+  /** The user closed the dev panel. */
   onDevModeExit?: () => void;
 }

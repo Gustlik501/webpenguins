@@ -1,6 +1,6 @@
 // Public API. Also supports zero-code embedding:
 //   <script src="webpenguins.js" data-auto data-penguins="10" data-trees="3"></script>
-import { Engine } from "./engine";
+import { Flock } from "./flock";
 import { WebPenguinsOptions } from "./types";
 
 export type { WebPenguinsOptions };
@@ -11,12 +11,24 @@ export interface WebPenguinsHandle {
   stop(opts?: { explode?: boolean }): Promise<void>;
   /** Remove everything immediately. */
   destroy(): void;
-  /** Live-update options (penguin count, blood, angels). */
+  /**
+   * Live-update any option. Penguin count, blood, angels, zapping,
+   * overrides and devMode apply in place; theme, snow, Santa, trees, moon
+   * and scale rebuild the world (the penguins parachute in again).
+   */
   set(opts: Partial<WebPenguinsOptions>): void;
   setPenguins(n: number): void;
 }
 
-let current: Engine | null = null;
+let current: Flock | null = null;
+
+// The script tag that loaded this bundle, as authored ("/js/webpenguins.js"):
+// the dev panel's export snippet points at the same file. Unknown for ES
+// module imports and extension content scripts.
+const loaderSrc =
+  (typeof document !== "undefined" &&
+    (document.currentScript as HTMLScriptElement | null)?.getAttribute("src")) ||
+  "webpenguins.js";
 
 const NOOP_HANDLE: WebPenguinsHandle = {
   stop: async () => undefined,
@@ -32,16 +44,20 @@ export function start(opts: WebPenguinsOptions = {}): WebPenguinsHandle {
     typeof matchMedia === "function" &&
     matchMedia("(prefers-reduced-motion: reduce)").matches
   ) {
+    // A developer adding data-dev deserves to know why nothing appeared.
+    if (opts.devMode) {
+      console.info("webpenguins: prefers-reduced-motion is on, so nothing runs (respectReducedMotion: false overrides it)");
+    }
     return NOOP_HANDLE;
   }
   current?.destroy();
-  const engine = new Engine(opts);
-  current = engine;
+  const flock = new Flock(opts, loaderSrc);
+  current = flock;
   return {
-    stop: (o) => engine.stop(o),
-    destroy: () => engine.destroy(),
-    set: (o) => engine.set(o),
-    setPenguins: (n) => engine.setPenguins(n),
+    stop: (o) => flock.stop(o),
+    destroy: () => flock.destroy(),
+    set: (o) => flock.set(o),
+    setPenguins: (n) => flock.set({ penguins: n }),
   };
 }
 

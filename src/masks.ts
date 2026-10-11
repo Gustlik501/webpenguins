@@ -7,7 +7,11 @@ import { PixelMask } from "./types";
 const MAX_MASK_DIM = 1200; // bigger images are almost certainly photos
 const ALPHA_SOLID = 64; // out of 255
 const OPAQUE_RATIO = 0.97; // ≥ this: plain rect is cheaper and identical
-const EMPTY_RATIO = 0.02; // ≤ this: nothing visible — not solid at all
+const EMPTY_RATIO = 0.02; // ≤ this: nothing visible — not solid at all...
+// ...but only when it's also a handful of pixels. A short word in a wide
+// heading box is legitimately sparse (~1.9% ink for "Short" at 28px across
+// 720px with Linux fonts) and must still collide.
+const EMPTY_PIXELS = 64;
 
 export interface MaskResult {
   status: "opaque" | "masked" | "empty" | "pending" | "failed";
@@ -68,7 +72,7 @@ function bitsFromData(data: Uint8ClampedArray, w: number, h: number): MaskResult
   }
   const solidity = solidCount / (w * h);
   if (solidity >= OPAQUE_RATIO) return { status: "opaque" };
-  if (solidity <= EMPTY_RATIO) return { status: "empty" };
+  if (solidity <= EMPTY_RATIO && solidCount < EMPTY_PIXELS) return { status: "empty" };
   return { status: "masked", mask: { w, h, rowWords, bits, topProfile } };
 }
 

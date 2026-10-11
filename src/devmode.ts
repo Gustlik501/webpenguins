@@ -1,8 +1,8 @@
-// Developer mode: a translucent overlay showing exactly what the engine
-// considers collidable (down to the pixel-mask shapes), click-to-override
+// Developer mode overlay: shows exactly what the engine considers
+// collidable (down to the pixel-mask shapes) and click-to-override
 // (auto -> forced solid -> ignored, stored as CSS selectors so a class can
-// be overridden site-wide), and a one-line export snippet for embedding
-// webpenguins with the current settings.
+// be overridden site-wide). The controls and the export snippet live in
+// the panel (panel.ts), which turns this overlay on and off.
 import { PixelMask } from "./types";
 import { World } from "./world";
 
@@ -22,10 +22,11 @@ export interface DevHost {
   getOverrides(): Overrides;
   /** Apply + persist new overrides (triggers a rescan). */
   setOverrides(o: Overrides): void;
-  /** The copy-paste embed line for the current configuration. */
-  buildSnippet(): string;
-  /** The user pressed Esc or the panel's exit button. */
-  exit(): void;
+}
+
+/** Is this (retargeted) event target the control panel? */
+export function inPanel(t: EventTarget | null): boolean {
+  return t instanceof Element && !!t.closest("[data-webpenguins-devpanel]");
 }
 
 interface Box {
@@ -53,9 +54,6 @@ export function selectorFor(el: Element): string {
 }
 
 export class DevMode {
-  private panel: HTMLDivElement;
-  private snippetInput: HTMLInputElement;
-  private stats: HTMLDivElement;
   private hovered: Element | null = null;
   private shiftHeld = false;
   private markCache: { t: number; solid: Box[]; ignore: Box[]; pixel: Box[] } = {
@@ -68,63 +66,11 @@ export class DevMode {
   private listeners: Array<() => void> = [];
 
   constructor(private host: DevHost) {
-    this.panel = document.createElement("div");
-    this.panel.setAttribute("data-webpenguins", "ignore");
-    this.panel.setAttribute("data-webpenguins-devpanel", "");
-    const s = this.panel.style;
-    s.cssText =
-      "position:fixed;top:12px;right:12px;z-index:2147483646;width:340px;" +
-      "background:rgba(16,24,38,.94);color:#e6edf5;border:1px solid rgba(148,163,184,.4);" +
-      "border-radius:10px;padding:12px 14px;font:12px/1.5 system-ui,sans-serif;" +
-      "box-shadow:0 8px 28px rgba(0,0,0,.45)";
-    this.panel.innerHTML =
-      '<div style="font-weight:600;font-size:13px;margin-bottom:2px">🐧 webpenguins developer mode</div>' +
-      '<div data-wp-stats style="opacity:.8"></div>' +
-      '<div style="opacity:.8;margin:4px 0 8px">Click an element to cycle ' +
-      '<span style="color:rgb(52,211,153)">auto</span> → ' +
-      '<span style="color:rgb(56,189,248)">solid</span> / ' +
-      '<span style="color:rgb(248,113,113)">ignored</span>. ' +
-      'Shift+click: <span style="color:rgb(192,132,252)">pixel-perfect</span> ' +
-      "(shift picks the exact element under the cursor). Esc exits.</div>" +
-      '<div style="display:flex;gap:6px;margin-bottom:8px">' +
-      '<input data-wp-snippet readonly style="flex:1;min-width:0;background:#0b1220;color:#9fc0e8;' +
-      'border:1px solid #2b3b52;border-radius:6px;padding:4px 6px;font:11px ui-monospace,monospace">' +
-      '<button data-wp-copy style="background:#2563eb;color:#fff;border:0;border-radius:6px;padding:4px 10px;cursor:pointer">Copy</button>' +
-      "</div>" +
-      '<div style="display:flex;gap:6px">' +
-      '<button data-wp-clear style="flex:1;background:#334155;color:#e6edf5;border:0;border-radius:6px;padding:5px 0;cursor:pointer">Clear overrides</button>' +
-      '<button data-wp-exit style="flex:1;background:#7f1d1d;color:#fee;border:0;border-radius:6px;padding:5px 0;cursor:pointer">Exit dev mode</button>' +
-      "</div>";
-    document.documentElement.appendChild(this.panel);
-    this.snippetInput = this.panel.querySelector("[data-wp-snippet]")!;
-    this.stats = this.panel.querySelector("[data-wp-stats]")!;
-
-    const copyBtn = this.panel.querySelector<HTMLButtonElement>("[data-wp-copy]")!;
-    copyBtn.addEventListener("click", () => {
-      this.snippetInput.select();
-      const done = () => {
-        copyBtn.textContent = "Copied!";
-        setTimeout(() => (copyBtn.textContent = "Copy"), 1200);
-      };
-      if (navigator.clipboard?.writeText) {
-        navigator.clipboard.writeText(this.snippetInput.value).then(done, done);
-      } else {
-        document.execCommand("copy");
-        done();
-      }
-    });
-    this.panel.querySelector("[data-wp-clear]")!.addEventListener("click", () => {
-      this.host.setOverrides({ solid: [], ignore: [], pixel: [] });
-      this.refresh();
-    });
-    this.panel.querySelector("[data-wp-exit]")!.addEventListener("click", () => this.host.exit());
-
     const onMove = (e: MouseEvent) => {
       this.shiftHeld = e.shiftKey;
       const t = e.target as Element | null;
       this.hovered =
         !t ||
-        this.panel.contains(t) ||
         t === document.documentElement ||
         t === document.body ||
         (t instanceof Element && t.getAttribute("data-webpenguins") === "ignore")
@@ -134,7 +80,7 @@ export class DevMode {
     // Capture-phase click: pick the element instead of activating it.
     const onClick = (e: MouseEvent) => {
       const t = e.target as Element | null;
-      if (!t || this.panel.contains(t)) return;
+      if (!t || inPanel(t)) return;
       e.preventDefault();
       e.stopImmediatePropagation();
       if (t === document.documentElement || t === document.body) return;
@@ -145,7 +91,6 @@ export class DevMode {
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Shift") this.shiftHeld = true;
-      if (e.key === "Escape") this.host.exit();
     };
     const onKeyUp = (e: KeyboardEvent) => {
       if (e.key === "Shift") this.shiftHeld = false;
@@ -160,7 +105,6 @@ export class DevMode {
       () => window.removeEventListener("keydown", onKey, true),
       () => window.removeEventListener("keyup", onKeyUp, true)
     );
-    this.refresh();
   }
 
   /** auto -> (solid|ignore depending on current state) -> the other -> auto */
@@ -183,7 +127,6 @@ export class DevMode {
       else o.solid.push(sel);
     }
     this.host.setOverrides(o);
-    this.refresh();
   }
 
   /** Shift+click: toggle pixel-perfect collision for the element. */
@@ -196,17 +139,11 @@ export class DevMode {
     o.pixel = o.pixel.filter((x) => x !== sel);
     if (!on) o.pixel.push(sel);
     this.host.setOverrides(o);
-    this.refresh();
   }
 
-  /** Update the panel (counts + snippet); call after overrides change. */
+  /** Call after overrides change: recollect the override outlines. */
   refresh(): void {
-    const o = this.host.getOverrides();
-    this.stats.textContent =
-      `${this.host.world.rects.length} collidable surfaces · ` +
-      `${o.solid.length} forced solid · ${o.ignore.length} ignored · ${o.pixel.length} pixel`;
-    this.snippetInput.value = this.host.buildSnippet();
-    this.markCache.t = 0; // recollect override boxes
+    this.markCache.t = 0;
   }
 
   private collectMarks(): void {
@@ -379,6 +316,5 @@ export class DevMode {
   stop(): void {
     for (const off of this.listeners) off();
     this.listeners = [];
-    this.panel.remove();
   }
 }

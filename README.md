@@ -35,6 +35,7 @@ Or programmatically (also available as an ES module, `webpenguins.esm.js`):
 const flock = WebPenguins.start({ penguins: 8, snow: true, santa: "medium" });
 
 flock.setPenguins(20);       // more!
+flock.set({ theme: "Turtles", trees: 3 });  // any option, live
 await flock.stop();          // the classic exit: everyone lights a bomb 💣
 ```
 
@@ -71,9 +72,21 @@ Developer mode shows you and lets you overrule it:
 WebPenguins.start({ devMode: true });   // or data-dev on the script tag
 ```
 
-Every collidable surface is tinted green on the overlay — including the
-per-pixel mask shapes of images and logos — the glass floor shows as a
-dashed line, and hovering any element shows its selector and current state.
+No extension needed: developer mode pins a control panel to the
+bottom-right corner with everything the extension popup has — flock size,
+theme, snow, Santa, trees, blood, click-to-zap, *Bomb them all* (and
+*Bring them back*) — plus the developer tools below. Settings apply
+instantly, rebuilding the world where they have to (theme, snow, trees).
+The **−** button (or Esc) collapses it to a little penguin icon that
+walks in place when you hover it; collapsing also turns the overlay off,
+so the page is clickable again and looks exactly as visitors will see
+it. On your own site the collapsed state is remembered across reloads
+(the extension leaves the page's storage alone). The panel lives in a
+shadow root, so the page's CSS can't touch it.
+
+With *Show collisions* on, every collidable surface is tinted green on
+the overlay — including the per-pixel mask shapes of images and logos —
+the glass floor shows as a dashed line, and hovering any element shows its selector and current state.
 **Click an element** to cycle it through *auto → forced solid / ignored →
 auto*; overrides are stored as CSS selectors, so overriding `.card` covers
 every card on the site. **Shift+click an element to make its collisions
@@ -82,23 +95,25 @@ SVG `foreignObject`, background images fetched and embedded (CORS
 permitting) — and penguins collide with its rendered pixels instead of its
 box. Works on headlines (they walk on the glyphs), gradient shapes and CSS
 background-image logos; images, canvases and inline SVGs already get this
-automatically from their alpha channel. The floating panel shows live
-counts, clears overrides, and — the point of it all — **exports a single
-copyable line** like:
+automatically from their alpha channel. The panel shows live counts,
+clears overrides, and — the point of it all — **exports a single copyable
+line** like:
 
 ```html
 <script src="webpenguins.js" data-auto data-penguins="12" data-theme="Turtles" data-solid=".hero" data-ignore=".ad-banner" data-pixel="h1.title"></script>
 ```
 
-Drop that next to a hosted copy of `webpenguins.js` and the site runs with
-exactly what you configured. The same overrides work programmatically:
+It points at the same `webpenguins.js` your `data-dev` tag loaded and
+leaves `data-dev` out, so swapping it in ships exactly what you
+configured. The same overrides work programmatically:
 `WebPenguins.start({ solid: [".hero"], ignore: [".ad-banner"], pixel: ["h1.title"] })`.
 Precedence follows specificity: an explicit override on an element beats an
 inherited subtree ignore, so you can ignore a whole section and still force
 one element inside it to be a platform.
 
-In the extension, toggle *Developer mode* in the popup — overrides are
-saved per site (`storage.sync`) and re-applied on every visit.
+In the extension, toggle *Developer mode* in the popup to get the same
+panel; settings changed there are saved like popup changes, and overrides
+are saved per site (`storage.sync`) and re-applied on every visit.
 
 Wondering why penguins do (or don't) land on something? Start with
 `WebPenguins.start({ debug: true, ... })`, select the element in devtools,
@@ -187,13 +202,23 @@ no background worker, no messaging, no page-visible globals.
 
 ## Building
 
+With Nix, `nix develop` gives you a shell with Node, Chromium (for the
+tests) and the tools for fetching the vendor sources:
+
 ```
+nix develop
 npm install
 node tools/build-assets.mjs   # vendor XPMs → assets/*.png + src/generated/assets.ts
 node tools/build.mjs          # → dist/webpenguins{,.esm}.js + extension bundle & icons
 npx tsc --noEmit              # typecheck
-node tools/test-run.mjs       # behavioural smoke test in headless Edge (CDP, no deps)
+node tools/test-run.mjs       # behavioural smoke test in headless Chromium/Edge (CDP, no deps)
+node tools/test-dev.mjs       # overrides, dev panel and embed export
 ```
+
+The tests find a browser via `$WP_BROWSER` (the devshell sets it), then
+the usual Edge/Chrome install paths, then `chromium`/`google-chrome` on
+`$PATH`. `test-extension.mjs` needs Chromium or Edge: branded Chrome no
+longer loads unpacked extensions from the command line.
 
 `vendor/` (git-ignored) holds the original sources:
 

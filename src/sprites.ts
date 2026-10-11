@@ -140,3 +140,36 @@ export function themeDelay(themes: string[]): number {
 }
 
 export const SNOW_ASSETS = MANIFEST.snow;
+
+/** One theme's first walker, cropped to its drawn pixels: the panel icon. */
+export interface IconSprite {
+  image: HTMLImageElement;
+  cellW: number;
+  cellH: number;
+  /** drawn-pixel crop inside the cell */
+  sx: number;
+  sy: number;
+  w: number;
+  h: number;
+  frames: number;
+  /** sprite-sheet row facing right */
+  row: number;
+}
+
+export function iconSprite(theme: string | string[] | undefined): IconSprite | null {
+  const genus = THEMES[resolveThemes(theme)[0]]?.genera[0];
+  const raw = genus?.anims.walker ?? (genus && Object.values(genus.anims)[0]);
+  if (!raw) return null;
+  const [pt, pr, pb, pl] = raw.pad ?? [0, 0, 0, 0];
+  return {
+    image: getImage(raw.image),
+    cellW: raw.width,
+    cellH: raw.height,
+    sx: pl,
+    sy: pt,
+    w: raw.width - pl - pr,
+    h: raw.height - pt - pb,
+    frames: raw.frames,
+    row: raw.directions > 1 ? 1 : 0,
+  };
+}

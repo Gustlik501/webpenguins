@@ -1,7 +1,7 @@
 // Wires everything together: fixed-timestep toon ticks (the original 60ms
 // cadence — that retro shuffle is part of the look), per-frame snow physics,
 // and one full redraw per animation frame.
-import { DevMode, Overrides } from "./devmode";
+import { DevMode, Overrides, inPanel } from "./devmode";
 import { PenguinManager, ZapPoint } from "./penguins";
 import { Renderer } from "./render";
 import { SnowSystem } from "./snow";
@@ -20,7 +20,7 @@ function resolveScale(scale: number | "auto" | undefined): number {
 }
 
 /** Selector lists arrive as arrays or ";"-separated strings (data attrs). */
-function parseList(v: string | string[] | undefined): string[] {
+export function parseList(v: string | string[] | undefined): string[] {
   if (!v) return [];
   return (Array.isArray(v) ? v : v.split(";")).map((s) => s.trim()).filter(Boolean);
 }
@@ -53,6 +53,8 @@ export class Engine {
   private scale = 1;
   private delay = 60; // ms per tick, set by the theme (Bill runs at 150)
   private dev: DevMode | undefined;
+  private overlayWanted = false;
+  private zapOnClick = true;
   private overrides: Overrides = { solid: [], ignore: [], pixel: [] };
   // debug instrumentation (exposed via the `debug` option)
   loopCount = 0;
@@ -126,16 +128,15 @@ export class Engine {
     window.addEventListener("resize", onResize);
     this.cleanups.push(() => window.removeEventListener("resize", onResize));
 
-    if (opts.zapOnClick ?? true) {
-      const onPointerDown = (e: PointerEvent) => {
-        // In dev mode clicks pick elements; nobody gets zapped.
-        if (!this.terminating && !this.dev) {
-          this.zaps.push({ x: e.clientX + window.scrollX, y: e.clientY + window.scrollY });
-        }
-      };
-      window.addEventListener("pointerdown", onPointerDown, true);
-      this.cleanups.push(() => window.removeEventListener("pointerdown", onPointerDown, true));
-    }
+    this.zapOnClick = opts.zapOnClick ?? true;
+    const onPointerDown = (e: PointerEvent) => {
+      // In dev mode clicks pick elements, and pressing the panel's buttons
+      // shouldn't zap whoever walks behind it: nobody gets zapped.
+      if (!this.zapOnClick || this.terminating || this.dev || inPanel(e.target)) return;
+      this.zaps.push({ x: e.clientX + window.scrollX, y: e.clientY + window.scrollY });
+    };
+    window.addEventListener("pointerdown", onPointerDown, true);
+    this.cleanups.push(() => window.removeEventListener("pointerdown", onPointerDown, true));
 
     const onVisibility = () => {
       this.lastTime = performance.now();
@@ -155,11 +156,14 @@ export class Engine {
         explain: (el: Element) => this.surfaces.explain(el),
       };
     }
-    if (opts.devMode) this.setDevMode(true);
+    this.setOverlay(this.overlayWanted);
     this.rafId = requestAnimationFrame(this.loop);
   }
 
-  private setDevMode(on: boolean): void {
+  /** The dev-mode collision overlay with click-to-override picking. */
+  setOverlay(on: boolean): void {
+    this.overlayWanted = on;
+    if (!this.manager) return; // applied once init finishes
     if (on && !this.dev && !this.destroyed) {
       this.dev = new DevMode({
         world: this.world,
@@ -171,11 +175,6 @@ export class Engine {
           pixel: [...this.overrides.pixel],
         }),
         setOverrides: (o) => this.applyOverrides(o, true),
-        buildSnippet: () => this.buildSnippet(),
-        exit: () => {
-          this.setDevMode(false);
-          this.opts.onDevModeExit?.();
-        },
       });
     } else if (!on && this.dev) {
       this.dev.stop();
@@ -194,28 +193,6 @@ export class Engine {
       });
     }
     this.dev?.refresh();
-  }
-
-  /** The one-line embed for the current configuration (dev mode export). */
-  private buildSnippet(): string {
-    const o = this.opts;
-    const esc = (s: string) => s.replace(/"/g, "'");
-    const attrs = ['src="webpenguins.js"', "data-auto"];
-    const n = this.manager && !this.terminating ? this.manager.penguinNumber : o.penguins;
-    if (n !== undefined && n !== 25) attrs.push(`data-penguins="${n}"`);
-    const themes = resolveThemes(o.theme);
-    if (themes.join(",") !== "Penguins") attrs.push(`data-theme="${esc(themes.join(","))}"`);
-    if (o.snow === false || typeof o.snow === "number") attrs.push(`data-snow="${o.snow}"`);
-    if (o.santa === false) attrs.push('data-santa="false"');
-    else if (typeof o.santa === "string" && o.santa !== "big") attrs.push(`data-santa="${o.santa}"`);
-    if ((o.trees ?? 0) > 0) attrs.push(`data-trees="${o.trees}"`);
-    if (o.moon) attrs.push('data-moon="true"');
-    if (o.blood === false) attrs.push('data-blood="false"');
-    if (typeof o.scale === "number" && o.scale !== 1) attrs.push(`data-scale="${o.scale}"`);
-    if (this.overrides.solid.length) attrs.push(`data-solid="${esc(this.overrides.solid.join("; "))}"`);
-    if (this.overrides.ignore.length) attrs.push(`data-ignore="${esc(this.overrides.ignore.join("; "))}"`);
-    if (this.overrides.pixel.length) attrs.push(`data-pixel="${esc(this.overrides.pixel.join("; "))}"`);
-    return `<script ${attrs.join(" ")}></script>`;
   }
 
   private loop = (): void => {
@@ -348,9 +325,11 @@ export class Engine {
   set(opts: Partial<WebPenguinsOptions>): void {
     this.ready.then(() => {
       if (this.destroyed || !this.manager) return;
-      if (opts.penguins !== undefined) this.manager.setNumber(opts.penguins);
+      // Mid-exit, a new count would respawn penguins among the bombers.
+      if (opts.penguins !== undefined && !this.terminating) this.manager.setNumber(opts.penguins);
       if (opts.blood !== undefined) this.manager.blood = opts.blood;
       if (opts.angels !== undefined) this.manager.angels = opts.angels;
+      if (opts.zapOnClick !== undefined) this.zapOnClick = opts.zapOnClick;
       if (opts.solid !== undefined || opts.ignore !== undefined || opts.pixel !== undefined) {
         this.applyOverrides(
           {
@@ -361,8 +340,12 @@ export class Engine {
           false
         );
       }
-      if (opts.devMode !== undefined) this.setDevMode(opts.devMode);
     });
+  }
+
+  /** Number of surfaces currently collidable (dev panel stats). */
+  surfaceCount(): number {
+    return this.world.rects.length;
   }
 
   /**

@@ -20,7 +20,6 @@
 
   var flock = null;
   var lastBombNonce = null;
-  var lastCore = null;
   var host = location.hostname;
 
   function shouldRun(s) {
@@ -41,6 +40,38 @@
     });
   }
 
+  // The in-page developer panel edited a setting: save it like the popup
+  // would. The storage echo comes back through apply(), where flock.set()
+  // sees nothing new and leaves the running flock alone.
+  function saveSettings(p) {
+    var patch = {};
+    if ("penguins" in p) patch.penguins = p.penguins;
+    if ("theme" in p) patch.theme = Array.isArray(p.theme) ? p.theme[0] : p.theme;
+    if ("snow" in p) patch.snow = !!p.snow;
+    if ("santa" in p) patch.santa = p.santa === false ? "off" : p.santa === true ? "big" : p.santa;
+    if ("trees" in p) patch.trees = p.trees;
+    if ("blood" in p) patch.blood = p.blood;
+    if ("zapOnClick" in p) patch.zap = p.zapOnClick;
+    chrome.storage.sync.set(patch);
+  }
+
+  function optionsFrom(s) {
+    var ov = siteOverrides(s);
+    return {
+      penguins: Number(s.penguins),
+      theme: s.theme,
+      snow: !!s.snow,
+      santa: s.santa === "off" ? false : s.santa,
+      trees: Number(s.trees) || 0,
+      blood: !!s.blood,
+      zapOnClick: !!s.zap,
+      devMode: !!s.devMode,
+      solid: ov.solid,
+      ignore: ov.ignore,
+      pixel: ov.pixel,
+    };
+  }
+
   function apply(s) {
     if (lastBombNonce === null) {
       lastBombNonce = s.bombNonce || 0;
@@ -48,7 +79,6 @@
       // One-shot: light the fuses. They stay gone until settings change again
       // or the page reloads.
       lastBombNonce = s.bombNonce || 0;
-      lastCore = null;
       if (flock) {
         var f = flock;
         flock = null;
@@ -57,40 +87,22 @@
       return;
     }
 
-    var ov = siteOverrides(s);
-    var core = JSON.stringify([
-      shouldRun(s), s.penguins, s.theme, s.snow, s.santa, s.trees, s.blood, s.zap,
-    ]);
-
     if (shouldRun(s)) {
-      if (flock && core === lastCore) {
-        // Only dev mode / overrides changed: update live, no restart.
-        flock.set({ devMode: !!s.devMode, solid: ov.solid, ignore: ov.ignore, pixel: ov.pixel });
+      if (flock) {
+        // Live where possible; the flock rebuilds itself for theme/snow/…
+        flock.set(optionsFrom(s));
         return;
       }
-      lastCore = core;
-      if (flock) flock.destroy();
-      flock = WebPenguins.start({
-        penguins: Number(s.penguins),
-        theme: s.theme,
-        snow: !!s.snow,
-        santa: s.santa === "off" ? false : s.santa,
-        trees: Number(s.trees) || 0,
-        blood: !!s.blood,
-        zapOnClick: !!s.zap,
-        devMode: !!s.devMode,
-        solid: ov.solid,
-        ignore: ov.ignore,
-        pixel: ov.pixel,
-        onOverridesChange: saveOverrides,
-        onDevModeExit: function () {
-          chrome.storage.sync.set({ devMode: false });
-        },
-      });
+      var opts = optionsFrom(s);
+      opts.onOverridesChange = saveOverrides;
+      opts.onSettingsChange = saveSettings;
+      opts.onDevModeExit = function () {
+        chrome.storage.sync.set({ devMode: false });
+      };
+      flock = WebPenguins.start(opts);
     } else if (flock) {
       var g = flock;
       flock = null;
-      lastCore = null;
       g.stop(); // graceful: the classic exit sequence
     }
   }
