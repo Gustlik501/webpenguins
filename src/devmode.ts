@@ -240,6 +240,32 @@ export class DevMode {
       }
     }
 
+    // One-way ledges: emphasize only the collidable top, not their sides.
+    ctx.save();
+    for (const r of this.host.world.platforms) {
+      const x = r.x - sx, y = r.y - sy;
+      if (x > vw || y > vh || x + r.w < 0 || y + r.h < 0) continue;
+      ctx.fillStyle = `rgba(${COLOR_SOLID}, 0.10)`;
+      ctx.fillRect(x, y, r.w, r.h);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = `rgba(${COLOR_SOLID}, 0.45)`;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(x + 0.5, y + 0.5);
+      ctx.lineTo(x + 0.5, y + r.h - 0.5);
+      ctx.lineTo(x + r.w - 0.5, y + r.h - 0.5);
+      ctx.lineTo(x + r.w - 0.5, y + 0.5);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = `rgba(${COLOR_SOLID}, 0.8)`;
+      ctx.beginPath();
+      ctx.moveTo(x, y + 1);
+      ctx.lineTo(x + r.w, y + 1);
+      ctx.stroke();
+    }
+    ctx.restore();
+
     // the glass floor line
     const w = this.host.world;
     if (w.glassActive()) {

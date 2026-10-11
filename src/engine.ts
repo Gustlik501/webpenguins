@@ -96,10 +96,12 @@ export class Engine {
     this.surfaces.setOverrides(this.overrides.solid, this.overrides.ignore, this.overrides.pixel);
     this.surfaces.start();
     this.world.setRects(this.surfaces.getRects());
+    this.world.platforms = this.surfaces.getPlatforms();
 
     const genera = buildGenera(themes, scale);
     const manager = new PenguinManager(this.world, genera, scale);
     this.manager = manager;
+    this.surfaces.setPinnedProvider(() => this.pinnedSurfaceIds());
     manager.blood = opts.blood ?? true;
     manager.angels = opts.angels ?? true;
     manager.setNumber(opts.penguins ?? DEFAULT_PENGUINS);
@@ -229,11 +231,46 @@ export class Engine {
     this.rafId = requestAnimationFrame(this.loop);
   };
 
+  /** Use Toon.calculateAssociation's edge probes without changing its state. */
+  private *pinnedSurfaceIds(): Iterable<number> {
+    const manager = this.manager;
+    if (!manager) return;
+    for (let i = 0; i < manager.penguinNumber; i++) {
+      const t = manager.toons[i];
+      if (!t.active) continue;
+      const data = t.data();
+      // Unassociated toons can still be standing on a window; protect the
+      // row under their feet too, not just windows they explicitly cling to.
+      let x = t.x, y = t.y + data.height, w = data.width, h = 1;
+      switch (t.association) {
+        case "up":
+          y = t.y - 1;
+          break;
+        case "left":
+          x = t.x - 1;
+          y = t.y;
+          w = 1;
+          h = data.height;
+          break;
+        case "right":
+          x = t.x + data.width;
+          y = t.y;
+          w = 1;
+          h = data.height;
+          break;
+      }
+      const r = this.world.findRect(x, y, w, h, this.world.rects);
+      if (r) yield r.id;
+    }
+  }
+
   /** One 60ms world tick. Only layout changes count as "windows moving". */
   private tick(): number {
     const manager = this.manager!;
     this.world.viewTop = window.scrollY;
     this.updateGlassFloor();
+    this.updatePlatforms();
+    this.surfaces.track();
     if (this.surfaces.movedSinceLastTick()) {
       const w = docWidth();
       const h = docHeight();
@@ -280,6 +317,33 @@ export class Engine {
       }
     }
     world.glassY = newGlass;
+  }
+
+  /** Ride camera-glued ledges without putting them in the solid region. */
+  private updatePlatforms(): void {
+    const next = this.surfaces.getPlatforms();
+    const manager = this.manager!;
+    const carried = new Set<number>();
+    for (const old of this.world.platforms) {
+      const r = next.find((p) => p.id === old.id);
+      if (!r) continue;
+      const dx = r.x - old.x, dy = r.y - old.y;
+      if (dx === 0 && dy === 0) continue;
+      const maxRide = 48 * this.scale;
+      for (let i = 0; i < manager.penguinNumber; i++) {
+        const t = manager.toons[i];
+        if (!t.active || t.association !== "down" || carried.has(i)) continue;
+        const data = t.data();
+        if (Math.abs(t.y + data.height - old.y) >= 1 || t.x >= old.x + old.w || t.x + data.width <= old.x) continue;
+        // Real ground owns the rider, even if it happens to share this row.
+        if (this.world.intersects(t.x, t.y + data.height, data.width, 1)) continue;
+        if (Math.abs(dx) <= maxRide && Math.abs(dy) <= maxRide && !t.offsetBlocked(dx, dy)) {
+          t.move(dx, dy);
+          carried.add(i); // overlapping ledges must not carry someone twice
+        }
+      }
+    }
+    this.world.platforms = next;
   }
 
   private draw(): void {
@@ -346,6 +410,11 @@ export class Engine {
   /** Number of surfaces currently collidable (dev panel stats). */
   surfaceCount(): number {
     return this.world.rects.length;
+  }
+
+  /** Number of one-way ledges, separate from the solid-surface count. */
+  platformCount(): number {
+    return this.world.platforms.length;
   }
 
   /**

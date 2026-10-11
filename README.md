@@ -144,14 +144,22 @@ no background worker, no messaging, no page-visible globals.
   canvas color is resolved even when it's painted by a non-ancestor
   underlay div (google.com-style dark themes do this), so boxes the same
   color as the page stay invisible. Bare headings collide with their
-  text's ink box instead of their full-width layout box, rects are clipped
-  by `overflow: hidden` ancestors, rounded corners become part of the
-  collision shape (see below), and boxes hidden behind other *painting*
-  elements are dropped — transparent hit-test overlays don't count
-  (`elementsFromPoint` sampling). The **document is the desktop**:
+  text's ink, one box per line (a short last line leaves air beside it),
+  rects are clipped by `overflow: hidden` ancestors, rounded corners become
+  part of the collision shape (see below), and the parts of a top edge
+  hidden behind other *painting* elements are cut away — a sidebar over half
+  a card leaves two walkable stretches, and transparent hit-test overlays
+  don't count (`elementsFromPoint` sampling). Elements that move between
+  scans (CSS transitions and animations, scrolled containers) are
+  re-measured every tick, so whoever stands on a sliding card rides it, and
+  the surface a penguin stands on is never dropped to stay under the
+  160-surface budget, even far off screen. The **document is the desktop**:
   everything lives in page coordinates and scrolling only moves the camera,
-  so penguins stay alive whether on screen or not. Only real layout changes
-  count as "windows moving" and go through the original
+  so penguins stay alive whether on screen or not. Fixed and sticky boxes
+  are one-way ledges instead: penguins can land on their tops but pass through
+  them from below or the side, so scrolling can't squash anyone. Gentle camera
+  moves carry their riders; big jumps leave them behind, like the glass floor.
+  Only real layout changes count as "windows moving" and go through the original
   association/relocation machinery — an accordion expanding into a penguin
   still squashes it, exactly like a moving X11 window. Surfaces touching the
   top of the page aren't solid (ditto the original, so toons can always drop

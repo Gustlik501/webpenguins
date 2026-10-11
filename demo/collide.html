@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>web-penguins collision fixtures</title>
+  <style>
+    html, body { margin: 0; background: #f6f8fa; }
+    body { min-height: 1400px; font-family: Arial, sans-serif; }
+    #scroll-box { position: absolute; left: 32px; top: 60px; width: 500px; height: 200px; overflow: auto; }
+    #scroll-content { position: relative; height: 500px; }
+    #scroll-card { position: absolute; left: 40px; top: 100px; width: 260px; height: 70px; background: #426b92; }
+    h2 { position: absolute; left: 620px; width: 420px; margin: 0; font: bold 32px/1.3 Arial, sans-serif; text-align: center; border-radius: 60px; }
+    #heading-lines { top: 60px; }
+    #heading-single { top: 210px; }
+    .deep-card { position: absolute; left: 32px; width: 500px; height: 90px; background: #608c56; }
+    #deep-first { top: 330px; }
+    #deep-second { top: 450px; }
+    #deep-first span { display: inline-block; width: 1px; height: 1px; }
+    .region { position: absolute; left: 620px; width: 420px; height: 90px; }
+    #ignored-region { top: 330px; }
+    #nested-region { top: 450px; background: #ab7046; }
+    .forced-child { position: absolute; left: 30px; top: 25px; width: 120px; height: 35px; background: #6a558c; }
+    #ignored-auto { left: 200px; }
+    #occluded-card, #masked-card { position: absolute; left: 32px; width: 720px; height: 90px; }
+    #occluded-card { top: 600px; background: #426b92; }
+    #masked-card { top: 820px; }
+    .middle-cover { position: absolute; left: 272px; width: 240px; height: 120px; background: #ab7046; z-index: 2; }
+    #occluded-cover { top: 580px; }
+    #masked-cover { top: 800px; }
+    #ride-card { position: absolute; left: 800px; top: 1180px; width: 420px; height: 70px; background: #608c56; transition: transform 1.2s linear; }
+    #bobbing-card { position: absolute; left: 32px; top: 1200px; width: 500px; height: 60px; background: #6a558c; animation: bob 1s linear infinite; }
+    @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-40px); } }
+    #track-clip { position: absolute; left: 32px; top: 1340px; width: 600px; height: 140px; overflow: hidden; }
+    #track-content { position: relative; height: 260px; }
+    #track-mask-card { position: absolute; left: 0; top: 20px; width: 720px; height: 90px; }
+    #track-cover { position: absolute; left: 240px; top: 0; width: 240px; height: 120px; background: #ab7046; z-index: 2; }
+    #thin-rule { position: absolute; left: 800px; top: 1440px; width: 420px; height: 2px; margin: 0; box-sizing: border-box; border: 0; border-top: 2px solid #345; }
+    #slim-forced { position: absolute; left: 800px; top: 1340px; width: 30px; height: 50px; background: #345; transition: transform .3s linear; }
+    #fixed-bar { position: fixed; bottom: 120px; left: 100px; width: 400px; height: 30px; background: #345; z-index: 10; }
+    #sticky-section { position: absolute; left: 800px; top: 2000px; width: 420px; height: 2400px; }
+    #sticky-header { position: sticky; top: 60px; height: 40px; background: #345; border-radius: 20px; z-index: 5; }
+  </style>
+</head>
+<body>
+  <!-- The scroller itself paints nothing: its moving card is the window. -->
+  <div id="scroll-box"><div id="scroll-content"><div id="scroll-card" data-webpenguins="solid"></div></div></div>
+  <h2 id="heading-lines">Penguins <span>walk</span> along platforms</h2>
+  <h2 id="heading-single">One <span>line</span></h2>
+  <div id="deep-first" class="deep-card" data-webpenguins="solid"></div>
+  <div id="deep-second" class="deep-card" data-webpenguins="solid"></div>
+  <div id="ignored-region" class="region" data-webpenguins="ignore">
+    <div id="ignored-forced" class="forced-child" data-webpenguins="solid"></div>
+    <div id="ignored-auto" class="forced-child"></div>
+  </div>
+  <div id="nested-region" class="region" data-webpenguins="solid">
+    <div id="nested-forced" class="forced-child" data-webpenguins="solid"></div>
+  </div>
+  <!-- Independent higher layers cover the walking edge, not the whole card. -->
+  <div id="occluded-card" data-webpenguins="solid"></div>
+  <div id="occluded-cover" class="middle-cover"></div>
+  <canvas id="masked-card" width="720" height="90"></canvas>
+  <div id="masked-cover" class="middle-cover"></div>
+  <!-- Separate lanes keep moving riders clear of the occlusion fixtures. -->
+  <div id="ride-card" data-webpenguins="solid"></div>
+  <div id="bobbing-card" data-webpenguins="solid"></div>
+  <div id="track-clip"><div id="track-content">
+    <canvas id="track-mask-card" width="720" height="90"></canvas>
+    <div id="track-cover" data-webpenguins="ignore"></div>
+  </div></div>
+  <!-- Unclipped thin/slim boxes must keep their own, less restrictive gates. -->
+  <hr id="thin-rule">
+  <div id="slim-forced" data-webpenguins="solid"></div>
+  <div id="fixed-bar"></div>
+  <section id="sticky-section"><header id="sticky-header">Sticky one-way ledge</header></section>
+  <script>
+    const ink = document.getElementById("masked-card").getContext("2d");
+    ink.fillStyle = "#426b92";
+    ink.fillRect(0, 0, 720, 90);
+    ink.clearRect(540, 0, 40, 90); // a gap in the right span tests maskDX
+    const trackedInk = document.getElementById("track-mask-card").getContext("2d");
+    trackedInk.fillStyle = "#426b92";
+    trackedInk.fillRect(0, 0, 720, 90);
+    trackedInk.clearRect(540, 0, 40, 90);
+    const descendants = document.createDocumentFragment();
+    for (let i = 0; i < 7000; i++) descendants.appendChild(document.createElement("span"));
+    document.getElementById("deep-first").appendChild(descendants);
+  </script>
+  <script src="../dist/webpenguins.js"></script>
+  <script>
+    window.flock = WebPenguins.start({ penguins: 4, snow: false, santa: false, debug: true });
+  </script>
+</body>
+</html>

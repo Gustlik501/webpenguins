@@ -122,6 +122,9 @@ export class Toon {
         if (this.y + data.height >= w.height) return true;
         // standing exactly on the glass floor counts as support
         if (w.glassActive() && Math.abs(this.y + data.height - w.glassY) < 1) return true;
+        for (const r of w.platforms) {
+          if (Math.abs(this.y + data.height - r.y) < 1 && this.x < r.x + r.w && this.x + data.width > r.x) return true;
+        }
         return w.intersects(this.x, this.y + data.height, data.width, 1);
       case "here":
         return w.intersects(this.x, this.y, data.width, data.height);
@@ -224,6 +227,14 @@ export class Toon {
       if (w.glassActive() && this.y + height <= w.glassY && newy + height > w.glassY) {
         newy = w.glassY - height;
         result = TOON_PARTIALMOVE;
+      }
+      // Camera-glued platforms use the same one-way crossing rule. Each
+      // clamp shortens the fall, so the highest crossed top wins in any order.
+      for (const r of w.platforms) {
+        if (this.y + height <= r.y && newy + height > r.y && newx < r.x + r.w && newx + width > r.x) {
+          newy = r.y - height;
+          result = TOON_PARTIALMOVE;
+        }
       }
       if (newx === this.x && newy === this.y && !stationary) {
         result = TOON_BLOCKED;

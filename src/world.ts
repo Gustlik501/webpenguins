@@ -20,6 +20,9 @@ export class World {
   glassY = Infinity;
   rects: SolidRect[] = [];
   prevRects: SolidRect[] = [];
+  // Camera-glued, top-only ledges: never part of the solid region used by
+  // squashing, associations, relocation or snow.
+  platforms: SolidRect[] = [];
 
   glassActive(): boolean {
     return this.glassY < this.height;

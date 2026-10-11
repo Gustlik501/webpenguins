@@ -15,6 +15,7 @@ export interface PanelHost {
   overrides(): Overrides;
   clearOverrides(): void;
   surfaceCount(): number;
+  platformCount(): number;
   snippet(): string;
   /** Penguins alive, mid-exit, or gone after "Bomb them all". */
   flockState(): "running" | "exiting" | "gone";
@@ -263,7 +264,7 @@ export class Panel {
 
   constructor(private api: PanelHost) {
     this.host = document.createElement("div");
-    // The scanner skips it (and it's fixed, so it'd be skipped anyway).
+    // Ignore explicitly: being fixed would otherwise make it a platform.
     this.host.setAttribute("data-webpenguins", "ignore");
     this.host.setAttribute("data-webpenguins-devpanel", "");
     this.root = this.host.attachShadow({ mode: "open" });
@@ -438,8 +439,10 @@ export class Panel {
   /** The parts that change on their own: counts, snippet, bomb state. */
   private syncLive(): void {
     const ov = this.api.overrides();
+    const platforms = this.api.platformCount();
     this.$("[data-wp-stats]").textContent =
-      `${this.api.surfaceCount()} surfaces · ${ov.solid.length} solid · ` +
+      `${this.api.surfaceCount()} surfaces · ` + (platforms > 0 ? `${platforms} platforms · ` : "") +
+      `${ov.solid.length} solid · ` +
       `${ov.ignore.length} ignored · ${ov.pixel.length} pixel`;
     const snippet = this.$("[data-wp-snippet]") as HTMLInputElement;
     const next = this.api.snippet();

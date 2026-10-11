@@ -127,6 +127,7 @@ export class Flock {
       overrides: () => this.overrides,
       clearOverrides: () => this.set({ solid: [], ignore: [], pixel: [] }, true),
       surfaceCount: () => this.engine?.surfaceCount() ?? 0,
+      platformCount: () => this.engine?.platformCount() ?? 0,
       snippet: () => buildSnippet(this.scriptSrc, this.opts, this.overrides),
       flockState: () => (!this.engine ? "gone" : this.exiting ? "exiting" : "running"),
       bomb: () => this.bomb(),
